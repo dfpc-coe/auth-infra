@@ -1,0 +1,17 @@
+{
+    "name": "coe-auth",
+    "profile": "coegc",
+    "region": "us-gov-east-1",
+    "tags": [
+        {
+            "Key": "Project",
+            "Value": "coe-auth"
+        },
+        "Owner"
+    ],
+    "artifacts": {
+        "docker": [
+            "coe-ecr-auth:{{gitsha}}",
+        ]
+    }
+}
