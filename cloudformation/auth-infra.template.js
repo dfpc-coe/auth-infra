@@ -11,10 +11,10 @@ export default cf.merge(
                 Description: 'GitSha that is currently being deployed',
                 Type: 'String'
             },
-            NetworkName: {
-                Description: 'VPC Stack to deploy into (Created by tak-ps/vpc)',
+            Environment: {
+                Description: 'VPC/ECS Stack to deploy into',
                 Type: 'String',
-                Default: 'coe-vpc-prod'
+                Default: 'prod'
             },
             AlarmEmail: {
                 Description: 'Email to send alarms to',
