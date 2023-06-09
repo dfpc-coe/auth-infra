@@ -11,7 +11,7 @@
     ],
     "artifacts": {
         "docker": [
-            "coe-ecr-auth:{{gitsha}}",
+            "coe-ecr-auth:{{gitsha}}"
         ]
     }
 }

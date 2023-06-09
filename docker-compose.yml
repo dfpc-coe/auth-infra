@@ -5,3 +5,9 @@ services:
         platform: linux/amd64
         build: .
         restart: always
+        ports:
+          - '1389:1389'
+        environment:
+          - LDAP_ADMIN_USERNAME=admin
+          - LDAP_ADMIN_PASSWORD=adminpassword
+          - LDAP_PORT_NUMBER=1389

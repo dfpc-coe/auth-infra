@@ -26,7 +26,7 @@ export default cf.merge(
         prefix: 'AuthELB',
         email: cf.ref('AlarmEmail'),
         apache: cf.stackName,
-        cluster: cf.ref('ECSCluster'),
+        cluster: cf.join(['coe-ecs-', cf.ref('Environment')]),
         service: cf.getAtt('Service', 'Name'),
         loadbalancer: cf.getAtt('ELB', 'LoadBalancerFullName'),
         targetgroup: cf.getAtt('TargetGroup', 'TargetGroupFullName')
