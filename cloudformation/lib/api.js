@@ -44,7 +44,7 @@ export default {
                     TargetGroupArn: cf.ref('TargetGroup')
                 }],
                 LoadBalancerArn: cf.ref('ELB'),
-                Port: 80,
+                Port: 1389,
                 Protocol: 'TCP'
             }
         },
