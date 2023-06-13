@@ -9,31 +9,32 @@ export default {
                 RetentionInDays: 7
             }
         },
+        LDAPMasterSecret: {
+            Type: 'AWS::SecretsManager::Secret',
+            Properties: {
+                Description: cf.join([cf.stackName, ' LDAP Master Password']),
+                GenerateSecretString: {
+                    SecretStringTemplate: '{"username": "takldapadmin"}',
+                    GenerateStringKey: 'password',
+                    ExcludePunctuation: true,
+                    PasswordLength: 32
+                },
+                Name: cf.join([cf.stackName, '/admin']),
+                KmsKeyId: cf.ref('KMS')
+            }
+        },
+
         ELB: {
             Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer',
             Properties: {
                 Name: cf.stackName,
-                Type: 'application',
-                SecurityGroups: [cf.ref('ELBSecurityGroup')],
+                Type: 'network',
                 Subnets:  [
                     cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-private-a'])),
                     cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-private-b']))
                 ]
             }
 
-        },
-        ELBSecurityGroup: {
-            Type : 'AWS::EC2::SecurityGroup',
-            Properties : {
-                GroupDescription: cf.join('-', [cf.stackName, 'elb-sg']),
-                SecurityGroupIngress: [{
-                    CidrIp: '0.0.0.0/0',
-                    IpProtocol: 'tcp',
-                    FromPort: 80,
-                    ToPort: 80
-                }],
-                VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc']))
-            }
         },
         HttpListener: {
             Type: 'AWS::ElasticLoadBalancingV2::Listener',
@@ -44,7 +45,7 @@ export default {
                 }],
                 LoadBalancerArn: cf.ref('ELB'),
                 Port: 80,
-                Protocol: 'HTTP'
+                Protocol: 'TCP'
             }
         },
         TargetGroup: {
@@ -53,14 +54,11 @@ export default {
             Properties: {
                 HealthCheckEnabled: true,
                 HealthCheckIntervalSeconds: 30,
-                HealthCheckPath: '/api',
+                HealthCheckProtocol: 'TCP',
                 Port: 1389,
-                Protocol: 'HTTP',
+                Protocol: 'TCP',
                 TargetType: 'ip',
-                VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc'])),
-                Matcher: {
-                    HttpCode: '200,202,302,304'
-                }
+                VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc']))
             }
         },
         TaskRole: {
@@ -129,6 +127,7 @@ export default {
         },
         TaskDefinition: {
             Type: 'AWS::ECS::TaskDefinition',
+            DependsOn: ['LDAPMasterSecret'],
             Properties: {
                 Family: cf.stackName,
                 Cpu: 1024,
@@ -145,14 +144,14 @@ export default {
                     Name: 'api',
                     Image: cf.join([cf.accountId, '.dkr.ecr.', cf.region, '.amazonaws.com/coe-ecr-auth:', cf.ref('GitSha')]),
                     PortMappings: [{
-                        ContainerPort: 1389 
+                        ContainerPort: 1389
                     }],
                     Environment: [
                         { Name: 'StackName', Value: cf.stackName },
-                        { Name: 'AWS_DEFAULT_REGION', Value: cf.region }
+                        { Name: 'AWS_DEFAULT_REGION', Value: cf.region },
                         { Name: 'LDAP_PORT_NUMBER', Value: 1389 },
-                        { Name: 'LDAP_ADMIN_USERNAME', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/api/signing-secret:SecretString::AWSCURRENT}}') },
-                        { Name: 'LDAP_ADMIN_PASSWORD', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/api/signing-secret:SecretString::AWSCURRENT}}') },
+                        { Name: 'LDAP_ADMIN_USERNAME', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:username:AWSCURRENT}}') },
+                        { Name: 'LDAP_ADMIN_PASSWORD', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:password:AWSCURRENT}}') },
                     ],
                     LogConfiguration: {
                         LogDriver: 'awslogs',
