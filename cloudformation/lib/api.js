@@ -29,6 +29,7 @@ export default {
             Properties: {
                 Name: cf.stackName,
                 Type: 'network',
+                Scheme: 'internal',
                 Subnets:  [
                     cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-private-a'])),
                     cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-private-b']))
