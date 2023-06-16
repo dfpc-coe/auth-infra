@@ -150,6 +150,7 @@ export default {
                     Environment: [
                         { Name: 'StackName', Value: cf.stackName },
                         { Name: 'AWS_DEFAULT_REGION', Value: cf.region },
+                        { Name: 'LDAP_SKIP_DEFAULT_TREE', Value: 'yes' },
                         { Name: 'LDAP_PORT_NUMBER', Value: 1389 },
                         { Name: 'LDAP_ROOT', Value: 'dc=cotak,dc=gov' },
                         { Name: 'LDAP_ALLOW_ANON_BINDING', Value: 'no' },
