@@ -45,7 +45,7 @@ export default {
                     TargetGroupArn: cf.ref('TargetGroup')
                 }],
                 LoadBalancerArn: cf.ref('ELB'),
-                Port: 1389,
+                Port: 389,
                 Protocol: 'TCP'
             }
         },
@@ -56,7 +56,7 @@ export default {
                 HealthCheckEnabled: true,
                 HealthCheckIntervalSeconds: 30,
                 HealthCheckProtocol: 'TCP',
-                Port: 1389,
+                Port: 389,
                 Protocol: 'TCP',
                 TargetType: 'ip',
                 VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc']))
@@ -145,17 +145,14 @@ export default {
                     Name: 'api',
                     Image: cf.join([cf.accountId, '.dkr.ecr.', cf.region, '.amazonaws.com/coe-ecr-auth:', cf.ref('GitSha')]),
                     PortMappings: [{
-                        ContainerPort: 1389
+                        ContainerPort: 389
                     }],
                     Environment: [
                         { Name: 'StackName', Value: cf.stackName },
                         { Name: 'AWS_DEFAULT_REGION', Value: cf.region },
-                        { Name: 'LDAP_SKIP_DEFAULT_TREE', Value: 'yes' },
-                        { Name: 'LDAP_PORT_NUMBER', Value: 1389 },
-                        { Name: 'LDAP_ROOT', Value: 'dc=cotak,dc=gov' },
-                        { Name: 'LDAP_ALLOW_ANON_BINDING', Value: 'no' },
                         { Name: 'LDAP_ADMIN_USERNAME', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:username:AWSCURRENT}}') },
                         { Name: 'LDAP_ADMIN_PASSWORD', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:password:AWSCURRENT}}') },
+                        { Name: 'LDAP_CONFIG_PASSWORD', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:password:AWSCURRENT}}') },
                     ],
                     LogConfiguration: {
                         LogDriver: 'awslogs',
@@ -191,7 +188,7 @@ export default {
                 },
                 LoadBalancers: [{
                     ContainerName: 'api',
-                    ContainerPort: 1389,
+                    ContainerPort: 389,
                     TargetGroupArn: cf.ref('TargetGroup')
                 }]
             }
@@ -204,8 +201,8 @@ export default {
                 SecurityGroupIngress: [{
                     CidrIp: '0.0.0.0/0',
                     IpProtocol: 'tcp',
-                    FromPort: 1389,
-                    ToPort: 1389
+                    FromPort: 389,
+                    ToPort: 389
                 }]
             }
         },
