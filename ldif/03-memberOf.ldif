@@ -3,6 +3,7 @@ dn: cn=module{0},cn=config
 changetype: modify
 add: olcModuleLoad
 olcModuleLoad: memberof
+
 # Backend memberOf overlay
 dn: olcOverlay={0}memberof,olcDatabase={1}{{ LDAP_BACKEND }},cn=config
 changetype: add

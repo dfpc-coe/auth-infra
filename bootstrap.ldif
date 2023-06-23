@@ -1,0 +1,42 @@
+dn: cn=user,dc=dfpc,dc=test
+changetype: add
+objectclass: inetOrgPerson
+cn: user
+givenname: user
+sn: User
+displayname: Normal User
+mail: user@example.com
+userpassword: user123
+
+dn: cn=admin_gh,dc=dfpc,dc=test
+changetype: add
+objectclass: inetOrgPerson
+cn: admin
+givenname: admin
+sn: Admin
+displayname: Admin User
+mail: admin@$example.com
+userpassword: admin123
+
+dn: ou=Groups,dc=dfpc,dc=test
+changetype: add
+objectclass: organizationalUnit
+ou: Groups
+
+dn: ou=Users,dc=dfpc,dc=test
+changetype: add
+objectclass: organizationalUnit
+ou: Users
+
+dn: cn=Admins,ou=Groups,dc=dfpc,dc=test
+changetype: add
+cn: Admins
+objectclass: groupOfUniqueNames
+uniqueMember: cn=admin,dc=dfpc,dc=test
+
+dn: cn=Users,ou=Groups,dc=dfpc,dc=test
+changetype: add
+cn: Users
+objectclass: groupOfUniqueNames
+uniqueMember: cn=user,dc=dfpc,dc=test
+

@@ -1,6 +1,7 @@
-FROM bitnami/openldap:2.6
+FROM osixia/openldap
 
-COPY config/*.ldif /schemas/
+ENV LDAP_ORGANISATION="COTAK"
+ENV LDAP_DOMAIN="cotak.gov"
 
-EXPOSE 1389
-
+ADD ldif /container/service/slapd/assets/config/bootstrap/ldif
+COPY test.ldif /container/service/slapd/assets/config/bootstrap/ldif/50-bootstrap.ldif
