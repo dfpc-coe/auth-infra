@@ -20,4 +20,3 @@ ENV LDAP_REMOVE_CONFIG_AFTER_SETUP: "true"
 ENV LDAP_SSL_HELPER_PREFIX: "ldap"
 
 ADD ldif /container/service/slapd/assets/config/bootstrap/ldif
-COPY bootstrap.ldif /container/service/slapd/assets/config/bootstrap/ldif/50-bootstrap.ldif
