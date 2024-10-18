@@ -1,6 +1,20 @@
 import cf from '@openaddresses/cloudfriend';
 
 export default {
+    Parameters: {
+        SSLCertificateIdentifier: {
+            Description: 'ACM SSL Certificate for HTTP Protocol',
+            Type: 'String'
+        },
+        LDAP_ORGANISATION: {
+            Description: 'LDAP Org',
+            Type: 'String'
+        },
+        LDAP_DOMAIN: {
+            Description: 'LDAP Org',
+            Type: 'String'
+        }
+    },
     Resources: {
         Logs: {
             Type: 'AWS::Logs::LogGroup',
@@ -44,9 +58,12 @@ export default {
                     Type: 'forward',
                     TargetGroupArn: cf.ref('TargetGroup')
                 }],
+                Certificates: [{
+                    CertificateArn: cf.join(['arn:', cf.partition, ':acm:', cf.region, ':', cf.accountId, ':certificate/', cf.ref('SSLCertificateIdentifier')])
+                }],
                 LoadBalancerArn: cf.ref('ELB'),
-                Port: 389,
-                Protocol: 'TCP'
+                Port: 636,
+                Protocol: 'TLS'
             }
         },
         TargetGroup: {
@@ -150,9 +167,11 @@ export default {
                     Environment: [
                         { Name: 'StackName', Value: cf.stackName },
                         { Name: 'AWS_DEFAULT_REGION', Value: cf.region },
+                        { Name: 'LDAP_ORGANISATION', Value: cf.ref('LDAP_ORGANISATION') },
+                        { Name: 'LDAP_DOMAIN', Value: cf.ref('LDAP_DOMAIN') },
                         { Name: 'LDAP_ADMIN_USERNAME', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:username:AWSCURRENT}}') },
                         { Name: 'LDAP_ADMIN_PASSWORD', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:password:AWSCURRENT}}') },
-                        { Name: 'LDAP_CONFIG_PASSWORD', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:password:AWSCURRENT}}') },
+                        { Name: 'LDAP_CONFIG_PASSWORD', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:password:AWSCURRENT}}') }
                     ],
                     LogConfiguration: {
                         LogDriver: 'awslogs',
@@ -232,6 +251,6 @@ export default {
         API: {
             Description: 'API ELB',
             Value: cf.join(['http://', cf.getAtt('ELB', 'DNSName')])
-        },
+        }
     }
 };

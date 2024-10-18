@@ -17,7 +17,7 @@ export default {
             Type: 'AWS::EC2::SecurityGroup',
             Properties: {
                 VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc'])),
-                GroupDescription: "EFS to Auth ECS Service",
+                GroupDescription: 'EFS to Auth ECS Service',
                 SecurityGroupIngress: [{
                     IpProtocol: 'tcp',
                     FromPort: 2049,
@@ -27,7 +27,7 @@ export default {
             }
         },
         EFSMountTargetSubnetPrivateA: {
-            Type: "AWS::EFS::MountTarget",
+            Type: 'AWS::EFS::MountTarget',
             Properties: {
                 FileSystemId: cf.ref('EFS'),
                 SubnetId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-private-a'])),
@@ -35,12 +35,12 @@ export default {
             }
         },
         EFSMountTargetSubnetPrivateB: {
-            Type: "AWS::EFS::MountTarget",
+            Type: 'AWS::EFS::MountTarget',
             Properties: {
                 FileSystemId: cf.ref('EFS'),
                 SubnetId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-private-b'])),
                 SecurityGroups: [cf.ref('EFSMountTargetSecurityGroup')]
             }
-        },
+        }
     }
 };
