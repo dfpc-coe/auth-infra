@@ -1,7 +1,6 @@
 services:
   openldap:
     build: ./
-    container_name: openldap
     volumes:
       - /var/lib/ldap
       - /etc/ldap/slapd.d
