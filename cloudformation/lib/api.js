@@ -6,11 +6,11 @@ export default {
             Description: 'ACM SSL Certificate for HTTP Protocol',
             Type: 'String'
         },
-        LDAP_ORGANISATION: {
+        LDAPOrganisation: {
             Description: 'LDAP Org',
             Type: 'String'
         },
-        LDAP_DOMAIN: {
+        LDAPDomain: {
             Description: 'LDAP Org',
             Type: 'String'
         }
@@ -43,10 +43,9 @@ export default {
             Properties: {
                 Name: cf.stackName,
                 Type: 'network',
-                Scheme: 'internal',
                 Subnets:  [
-                    cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-private-a'])),
-                    cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-private-b']))
+                    cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-public-a'])),
+                    cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-public-b']))
                 ]
             }
 
@@ -61,6 +60,7 @@ export default {
                 Certificates: [{
                     CertificateArn: cf.join(['arn:', cf.partition, ':acm:', cf.region, ':', cf.accountId, ':certificate/', cf.ref('SSLCertificateIdentifier')])
                 }],
+                SslPolicy: 'ELBSecurityPolicy-TLS-1-2-2017-01',
                 LoadBalancerArn: cf.ref('ELB'),
                 Port: 636,
                 Protocol: 'TLS'
@@ -72,7 +72,10 @@ export default {
             Properties: {
                 HealthCheckEnabled: true,
                 HealthCheckIntervalSeconds: 30,
+                HealthCheckTimeoutSeconds: 10,
+                HealthyThresholdCount: 3,
                 HealthCheckProtocol: 'TCP',
+                HealthCheckPort: 389,
                 Port: 389,
                 Protocol: 'TCP',
                 TargetType: 'ip',
@@ -158,17 +161,27 @@ export default {
                 }],
                 ExecutionRoleArn: cf.getAtt('ExecRole', 'Arn'),
                 TaskRoleArn: cf.getAtt('TaskRole', 'Arn'),
+                Volumes: [{
+                    Name: cf.stackName,
+                    EFSVolumeConfiguration: {
+                        FilesystemId: cf.ref('EFS')
+                    }
+                }],
                 ContainerDefinitions: [{
                     Name: 'api',
                     Image: cf.join([cf.accountId, '.dkr.ecr.', cf.region, '.amazonaws.com/coe-ecr-auth:', cf.ref('GitSha')]),
+                    MountPoints: [{
+                        ContainerPath: '/var/lib/ldap',
+                        SourceVolume: cf.stackName
+                    }],
                     PortMappings: [{
                         ContainerPort: 389
                     }],
                     Environment: [
                         { Name: 'StackName', Value: cf.stackName },
                         { Name: 'AWS_DEFAULT_REGION', Value: cf.region },
-                        { Name: 'LDAP_ORGANISATION', Value: cf.ref('LDAP_ORGANISATION') },
-                        { Name: 'LDAP_DOMAIN', Value: cf.ref('LDAP_DOMAIN') },
+                        { Name: 'LDAP_ORGANISATION', Value: cf.ref('LDAPOrganisation') },
+                        { Name: 'LDAP_DOMAIN', Value: cf.ref('LDAPDomain') },
                         { Name: 'LDAP_ADMIN_USERNAME', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:username:AWSCURRENT}}') },
                         { Name: 'LDAP_ADMIN_PASSWORD', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:password:AWSCURRENT}}') },
                         { Name: 'LDAP_CONFIG_PASSWORD', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:password:AWSCURRENT}}') }
@@ -200,8 +213,8 @@ export default {
                         AssignPublicIp: 'ENABLED',
                         SecurityGroups: [cf.ref('ServiceSecurityGroup')],
                         Subnets:  [
-                            cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-private-a'])),
-                            cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-private-b']))
+                            cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-public-a'])),
+                            cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-public-b']))
                         ]
                     }
                 },
@@ -220,32 +233,16 @@ export default {
                 SecurityGroupIngress: [{
                     CidrIp: '0.0.0.0/0',
                     IpProtocol: 'tcp',
+                    FromPort: 636,
+                    ToPort: 636
+                },{
+                    CidrIp: '0.0.0.0/0',
+                    IpProtocol: 'tcp',
                     FromPort: 389,
                     ToPort: 389
                 }]
             }
         },
-        ETLFunctionRole: {
-            Type: 'AWS::IAM::Role',
-            Properties: {
-                RoleName: cf.stackName,
-                AssumeRolePolicyDocument: {
-                    Version: '2012-10-17',
-                    Statement: [{
-                        Effect: 'Allow',
-                        Principal: {
-                            Service: 'lambda.amazonaws.com'
-                        },
-                        Action: 'sts:AssumeRole'
-                    }]
-                },
-                Path: '/',
-                Policies: [],
-                ManagedPolicyArns: [
-                    cf.join(['arn:', cf.partition, ':iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'])
-                ]
-            }
-        }
     },
     Outputs: {
         API: {
