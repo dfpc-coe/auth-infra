@@ -26,6 +26,42 @@ export default {
                 }]
             }
         },
+        EFSAccessPointLDAP: {
+            Type: 'AWS::EFS::AccessPoint',
+            Properties: {
+                FileSystemId: cf.ref('EFS'),
+                PosixUser: {
+                    Uid: 0,
+                    Gid: 0
+                },
+                RootDirectory: {
+                    CreationInfo: {
+                        OwnerGid: 0,
+                        OwnerUid: 0,
+                        Permissions: '0777'
+                    },
+                    Path: '/ldap'
+                },
+            }
+        },
+        EFSAccessPointSLAPD: {
+            Type: 'AWS::EFS::AccessPoint',
+            Properties: {
+                FileSystemId: cf.ref('EFS'),
+                PosixUser: {
+                    Uid: 0,
+                    Gid: 0
+                },
+                RootDirectory: {
+                    CreationInfo: {
+                        OwnerGid: 0,
+                        OwnerUid: 0,
+                        Permissions: '0777'
+                    },
+                    Path: '/slapd.d'
+                },
+            }
+        },
         EFSMountTargetSubnetPrivateA: {
             Type: 'AWS::EFS::MountTarget',
             Properties: {

@@ -148,7 +148,11 @@ export default {
         },
         TaskDefinition: {
             Type: 'AWS::ECS::TaskDefinition',
-            DependsOn: ['LDAPMasterSecret'],
+            DependsOn: [
+                'LDAPMasterSecret',
+                'EFSAccessPointLDAP',
+                'EFSAccessPointSLAPD'
+            ],
             Properties: {
                 Family: cf.stackName,
                 Cpu: 1024,
@@ -162,9 +166,24 @@ export default {
                 ExecutionRoleArn: cf.getAtt('ExecRole', 'Arn'),
                 TaskRoleArn: cf.getAtt('TaskRole', 'Arn'),
                 Volumes: [{
-                    Name: cf.stackName,
+                    Name: cf.join([cf.stackName, '-ldap']),
                     EFSVolumeConfiguration: {
-                        FilesystemId: cf.ref('EFS')
+                        FilesystemId: cf.ref('EFS'),
+                        TransitEncryption: 'ENABLED',
+                        AuthorizationConfig: {
+                            AccessPointId: cf.ref('EFSAccessPointLDAP')
+                        },
+                        RootDirectory: '/'
+                    }
+                },{
+                    Name: cf.join([cf.stackName, '-slapd']),
+                    EFSVolumeConfiguration: {
+                        FilesystemId: cf.ref('EFS'),
+                        TransitEncryption: 'ENABLED',
+                        AuthorizationConfig: {
+                            AccessPointId: cf.ref('EFSAccessPointSLAPD')
+                        },
+                        RootDirectory: '/'
                     }
                 }],
                 ContainerDefinitions: [{
@@ -172,7 +191,10 @@ export default {
                     Image: cf.join([cf.accountId, '.dkr.ecr.', cf.region, '.amazonaws.com/coe-ecr-auth:', cf.ref('GitSha')]),
                     MountPoints: [{
                         ContainerPath: '/var/lib/ldap',
-                        SourceVolume: cf.stackName
+                        SourceVolume: cf.join([cf.stackName, '-ldap']),
+                    }, {
+                        ContainerPath: '/etc/ldap/slapd.d',
+                        SourceVolume: cf.join([cf.stackName, '-slapd']),
                     }],
                     PortMappings: [{
                         ContainerPort: 389
@@ -248,6 +270,14 @@ export default {
         API: {
             Description: 'API ELB',
             Value: cf.join(['http://', cf.getAtt('ELB', 'DNSName')])
+        },
+        LDAPAdminUsername: {
+            Description: 'LDAP Admin Username',
+            Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:username:AWSCURRENT}}')
+        },
+        LDAPAdminPassword: {
+            Description: 'LDAP Admin Password',
+            Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:password:AWSCURRENT}}')
         }
     }
 };
