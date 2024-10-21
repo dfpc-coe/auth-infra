@@ -28,7 +28,7 @@ export default {
             Properties: {
                 Description: cf.join([cf.stackName, ' LDAP Master Password']),
                 GenerateSecretString: {
-                    SecretStringTemplate: '{"username": "takldapadmin"}',
+                    SecretStringTemplate: '{"username": "admin"}',
                     GenerateStringKey: 'password',
                     ExcludePunctuation: true,
                     PasswordLength: 32
