@@ -2,6 +2,7 @@ FROM osixia/openldap:1.5.0
 
 ADD ldif /container/service/slapd/assets/config/bootstrap/ldif
 
+ENV LDAP_TLS="false"
 ENV LDAP_BASE_DN=""
 ENV LDAP_READONLY_USER="false"
 ENV LDAP_RFC2307BIS_SCHEMA="false"
