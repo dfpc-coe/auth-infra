@@ -14,8 +14,8 @@ echo "TLD: ${TLD}"
 for filename in /container/templates/; do
     echo "Building ${filename}"
 
-    sed -i "s/\$\{ORG\}/${ORG}/" "${filename}"
-    sed -i "s/\$\{ORG\}/${TLD}/" "${filename}"
+    sed -i "s/CUSTOM_ORG/${ORG}/" "${filename}"
+    sed -i "s/CUSTOM_TLD/${TLD}/" "${filename}"
 
     cp "${filename}" "/container/service/slapd/assets/config/bootstrap/ldif/"
 done
