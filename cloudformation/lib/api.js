@@ -49,7 +49,7 @@ export default {
             Properties: {
                 Description: cf.join([cf.stackName, ' LDAP SVC Account Password']),
                 GenerateSecretString: {
-                    SecretStringTemplate: '{"username": "ldapsvcaccoun"}',
+                    SecretStringTemplate: '{"username": "ldapsvcaccount"}',
                     GenerateStringKey: 'password',
                     ExcludePunctuation: true,
                     PasswordLength: 32
