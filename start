@@ -3,10 +3,10 @@
 set -euo pipefail
 
 echo "Generating LDIF"
-echo "Domain: ${LDAPDomain}"
+echo "Domain: ${LDAP_DOMAIN}"
 
-ORG=$(echo "${LDAPDomain}" | sed 's/\..*$//')
-TLD=$(echo "${LDAPDomain}" | sed 's/^.*\.//')
+ORG="$(echo "${LDAP_DOMAIN}" | sed 's/\..*$//')"
+TLD="$(echo "${LDAP_DOMAIN}" | sed 's/^.*\.//')"
 
 echo "ORG: ${ORG}"
 echo "TLD: ${TLD}"
