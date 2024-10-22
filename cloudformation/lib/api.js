@@ -2,6 +2,12 @@ import cf from '@openaddresses/cloudfriend';
 
 export default {
     Parameters: {
+        EnableExecute: {
+            Description: 'Allow SSH into docker container - should only be enabled for limited debugging',
+            Type: 'String',
+            AllowedValues: [ 'true', 'false' ],
+            Default: false
+        },
         SSLCertificateIdentifier: {
             Description: 'ACM SSL Certificate for HTTP Protocol',
             Type: 'String'
@@ -99,6 +105,15 @@ export default {
                     PolicyName: cf.join('-', [cf.stackName, 'api-policy']),
                     PolicyDocument: {
                         Statement: [{
+                            Effect: 'Allow',
+                            Action: [
+                                'ssmmessages:CreateControlChannel',
+                                'ssmmessages:CreateDataChannel',
+                                'ssmmessages:OpenControlChannel',
+                                'ssmmessages:OpenDataChannel'
+                            ],
+                            Resource: '*'
+                        },{
                             Effect: 'Allow',
                             Action: [
                                 'logs:CreateLogGroup',
@@ -226,6 +241,7 @@ export default {
             Properties: {
                 ServiceName: cf.join('-', [cf.stackName, 'Service']),
                 Cluster: cf.join(['coe-ecs-', cf.ref('Environment')]),
+                EnableExecuteCommand: cf.ref('EnableExecute'),
                 TaskDefinition: cf.ref('TaskDefinition'),
                 LaunchType: 'FARGATE',
                 HealthCheckGracePeriodSeconds: 300,

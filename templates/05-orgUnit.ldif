@@ -1,0 +1,6 @@
+dn: ou=People,dc=${ORG},dc=${TLD}
+objectclass: organizationalUnit
+ou: People
+dn: ou=Group,dc=${ORG},dc=${TLD}
+objectclass: organizationalUnit
+ou: Group

@@ -1,0 +1,21 @@
+#!/bin/bash
+
+set -euo pipefail
+
+echo "Generating LDIF"
+
+cotak.gov
+
+echo "Domain: ${LDAPDomain}"
+
+ORG=$(echo "${LDAPDomain}" | sed 's/\..*$//')
+TLD=$(echo "${LDAPDomain}" | sed 's/^.*\.//')
+
+for filename in /container/templates/; do
+    sed -i "s/\$\{ORG\}/${ORG}/" "${filename}"
+    sed -i "s/\$\{ORG\}/${TLD}/" "${filename}"
+
+    cp "${filename}" "/container/service/slapd/assets/config/bootstrap/ldif/"
+done
+
+/container/tool/run
