@@ -44,6 +44,21 @@ export default {
             }
         },
 
+        LDAPSVCSecret: {
+            Type: 'AWS::SecretsManager::Secret',
+            Properties: {
+                Description: cf.join([cf.stackName, ' LDAP Master Password']),
+                GenerateSecretString: {
+                    SecretStringTemplate: '{"username": "admin"}',
+                    GenerateStringKey: 'password',
+                    ExcludePunctuation: true,
+                    PasswordLength: 32
+                },
+                Name: cf.join([cf.stackName, '/admin']),
+                KmsKeyId: cf.ref('KMS')
+            }
+        },
+
         ELB: {
             Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer',
             Properties: {
