@@ -49,7 +49,7 @@ export default {
             Properties: {
                 Description: cf.join([cf.stackName, ' LDAP SVC Account Password']),
                 GenerateSecretString: {
-                    SecretStringTemplate: '{"username": "svcaccount"}',
+                    SecretStringTemplate: '{"username": "ldapsvcaccoun"}',
                     GenerateStringKey: 'password',
                     ExcludePunctuation: true,
                     PasswordLength: 32
@@ -311,6 +311,14 @@ export default {
         LDAPAdminPassword: {
             Description: 'LDAP Admin Password',
             Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:password:AWSCURRENT}}')
+        },
+        LDAPSVCUsername: {
+            Description: 'LDAP SVC Username',
+            Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/svc:SecretString:username:AWSCURRENT}}')
+        },
+        LDAPSVCPassword: {
+            Description: 'LDAP SVC Password',
+            Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/svc:SecretString:password:AWSCURRENT}}')
         }
     }
 };
