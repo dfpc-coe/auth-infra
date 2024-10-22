@@ -11,7 +11,7 @@ TLD="$(echo "${LDAP_DOMAIN}" | sed 's/^.*\.//')"
 echo "ORG: ${ORG}"
 echo "TLD: ${TLD}"
 
-for filename in /container/templates/; do
+for filename in /container/templates/*.ldif; do
     echo "Building ${filename}"
 
     sed -i "s/CUSTOM_ORG/${ORG}/" "${filename}"
