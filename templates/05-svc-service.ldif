@@ -1,0 +1,11 @@
+# Update the userPassword below with the hash
+dn: uid=ldapsvcaccount,dc=CUSTOM_ORG,dc=CUSTOM_TLD
+uid: ldapsvcaccount
+description: This account is used to query the LDAP Database
+cn: ldapsvcaccount
+sn: ldapquery-svcaccount
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+userPassword: CUSTOM_SERVICE_PASSWORD

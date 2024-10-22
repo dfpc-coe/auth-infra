@@ -47,14 +47,14 @@ export default {
         LDAPSVCSecret: {
             Type: 'AWS::SecretsManager::Secret',
             Properties: {
-                Description: cf.join([cf.stackName, ' LDAP Master Password']),
+                Description: cf.join([cf.stackName, ' LDAP SVC Account Password']),
                 GenerateSecretString: {
-                    SecretStringTemplate: '{"username": "admin"}',
+                    SecretStringTemplate: '{"username": "svcaccount"}',
                     GenerateStringKey: 'password',
                     ExcludePunctuation: true,
                     PasswordLength: 32
                 },
-                Name: cf.join([cf.stackName, '/admin']),
+                Name: cf.join([cf.stackName, '/svc']),
                 KmsKeyId: cf.ref('KMS')
             }
         },
@@ -236,6 +236,8 @@ export default {
                         { Name: 'LDAP_DOMAIN', Value: cf.ref('LDAPDomain') },
                         { Name: 'LDAP_ADMIN_USERNAME', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:username:AWSCURRENT}}') },
                         { Name: 'LDAP_ADMIN_PASSWORD', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:password:AWSCURRENT}}') },
+                        { Name: 'LDAP_SVC_USERNAME', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/svc:SecretString:password:AWSCURRENT}}') },
+                        { Name: 'LDAP_SVC_PASSWORD', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/svc:SecretString:password:AWSCURRENT}}') },
                         { Name: 'LDAP_CONFIG_PASSWORD', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:password:AWSCURRENT}}') }
                     ],
                     LogConfiguration: {
