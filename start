@@ -16,9 +16,11 @@ SERVICE_PASSWORD="$(slappasswd -h "{SSHA}" -s "${LDAP_SVC_PASSWORD}")"
 for filename in /container/templates/*.ldif; do
     echo "Building ${filename}"
 
-    sed -i "s/CUSTOM_ORG/${ORG}/" "${filename}"
-    sed -i "s/CUSTOM_TLD/${TLD}/" "${filename}"
-    sed -i "s/CUSTOM_SERVICE_PASSWORD/${SERVICE_PASSWORD}/" "${filename}"
+    sed -i "s|CUSTOM_ORG|${ORG}|" "${filename}"
+    sed -i "s|CUSTOM_TLD|${TLD}|" "${filename}"
+    sed -i "s|CUSTOM_SERVICE_PASSWORD|${SERVICE_PASSWORD}|" "${filename}"
+
+    cat ${filename}
 
     cp "${filename}" "/container/service/slapd/assets/config/bootstrap/ldif/"
 done
