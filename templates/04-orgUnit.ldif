@@ -1,6 +1,7 @@
 dn: ou=People,dc=CUSTOM_ORG,dc=CUSTOM_TLD
 objectclass: organizationalUnit
 ou: People
+
 dn: ou=Group,dc=CUSTOM_ORG,dc=CUSTOM_TLD
 objectclass: organizationalUnit
 ou: Group
