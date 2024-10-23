@@ -25,4 +25,16 @@ for filename in /container/templates/*.ldif; do
     cp "${filename}" "/container/service/slapd/assets/config/bootstrap/ldif/"
 done
 
-/container/tool/run
+/container/tool/run&
+
+sed -i "s|CUSTOM_ORG|${ORG}|" "/container/modify.ldif"
+sed -i "s|CUSTOM_TLD|${TLD}|" "/container/modify.ldif"
+sed -i "s|CUSTOM_SERVICE_PASSWORD|${SERVICE_PASSWORD}|" "/container/modify.ldif"
+
+echo "Sleeping"
+sleep 10
+
+echo "attempting modify"
+ldapmodify -D 'cn=admin,dc=cotak,dc=gov' -H ldap://localhost:389 -w "${LDAP_ADMIN_PASSWORD}" -f /container/modify.ldif
+
+wait

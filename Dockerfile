@@ -4,6 +4,7 @@ EXPOSE 389
 
 ADD ldif /container/service/slapd/assets/config/bootstrap/ldif
 ADD templates /container/templates
+ADD modify.ldif /container/modify.ldif
 
 ENV LDAP_TLS="false"
 ENV LDAP_BASE_DN=""

@@ -1,4 +1,3 @@
-# Update the userPassword below with the hash
 dn: uid=ldapsvcaccount,dc=CUSTOM_ORG,dc=CUSTOM_TLD
 changetype: add
 uid: ldapsvcaccount
