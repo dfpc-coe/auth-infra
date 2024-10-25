@@ -54,3 +54,22 @@ Further help about a specific command can be obtained via something like:
 npx deploy info --help
 ```
 
+### Example Local Testing
+
+1. Build the Docker Image
+
+```sh
+docker compose up --build
+```
+
+2. Populate the database with users
+
+```sh
+ldapmodify -D 'cn=admin,dc=cotak,dc=gov' -H ldap://localhost:3389 -w admin -f <INPUT FILE>
+```
+
+3. Ensure the service account can list users
+
+```
+ldapsearch -v -x -D 'uid=ldapsvcaccount,dc=cotak,dc=gov' -b 'dc=cotak,dc=gov' -H ldap://localhost:3389 -w service
+```

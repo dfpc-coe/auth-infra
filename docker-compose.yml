@@ -1,9 +1,9 @@
 services:
   openldap:
     build: ./
-    volumes:
-      - /var/lib/ldap
-      - /etc/ldap/slapd.d
-      - /etc/letsencrypt:/container/service/slapd/assets/certs/
+    environment:
+      - LDAP_DOMAIN=cotak.gov
+      - LDAP_ADMIN_PASSWORD=admin
+      - LDAP_SVC_PASSWORD=service
     ports:
-      - "389:389"
+      - "3389:389"
