@@ -283,7 +283,12 @@ export default {
         ServiceSecurityGroup: {
             Type: 'AWS::EC2::SecurityGroup',
             Properties: {
-                GroupDescription: cf.join('-', [cf.stackName, 'ec2-sg']),
+                Tags: [{
+                    Key: 'Name',
+                    Value: cf.join('-', [cf.stackName, 'ecs-service-sg'])
+                }],
+                GroupName: cf.join('-', [cf.stackName, 'ecs-service-sg']),
+                GroupDescription: cf.join('-', [cf.stackName, 'ecs-sg']),
                 VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc'])),
                 SecurityGroupIngress: [{
                     CidrIp: '0.0.0.0/0',

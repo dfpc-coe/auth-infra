@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v1.2.0
+
+- :rocket: Add SG Names to policy
+
 ### v1.1.0
 
 - :rocket: Update to latest alarms package which makes topic conditional
