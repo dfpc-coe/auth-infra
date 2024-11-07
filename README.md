@@ -73,3 +73,9 @@ ldapmodify -D 'cn=admin,dc=cotak,dc=gov' -H ldap://localhost:3389 -w admin -f <I
 ```
 ldapsearch -v -x -D 'uid=ldapsvcaccount,dc=cotak,dc=gov' -b 'dc=cotak,dc=gov' -H ldap://localhost:3389 -w service
 ```
+
+4. Ensure the admin account can list users
+
+```
+ldapsearch -x -H ldap://localhost:3389 -b dc=cotak,dc=gov -D "cn=admin,dc=cotak,dc=gov" -w admin
+```
