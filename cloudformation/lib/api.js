@@ -43,7 +43,6 @@ export default {
                 KmsKeyId: cf.ref('KMS')
             }
         },
-
         LDAPSVCSecret: {
             Type: 'AWS::SecretsManager::Secret',
             Properties: {
@@ -58,18 +57,36 @@ export default {
                 KmsKeyId: cf.ref('KMS')
             }
         },
-
         ELB: {
             Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer',
             Properties: {
                 Name: cf.stackName,
                 Type: 'network',
+                SecurityGroups: [cf.ref('ELBSecurityGroup')],
                 Subnets:  [
                     cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-public-a'])),
                     cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-public-b']))
                 ]
             }
 
+        },
+        ELBSecurityGroup: {
+            Type : 'AWS::EC2::SecurityGroup',
+            Properties : {
+                Tags: [{
+                    Key: 'Name',
+                    Value: cf.join('-', [cf.stackName, 'elb-sg'])
+                }],
+                GroupName: cf.join('-', [cf.stackName, 'elb-sg']),
+                GroupDescription: 'Allow 636 Access to ELB',
+                SecurityGroupIngress: [{
+                    CidrIp: '0.0.0.0/0',
+                    IpProtocol: 'tcp',
+                    FromPort: 636,
+                    ToPort: 636
+                }],
+                VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc']))
+            }
         },
         HttpListener: {
             Type: 'AWS::ElasticLoadBalancingV2::Listener',
@@ -89,7 +106,6 @@ export default {
         },
         TargetGroup: {
             Type: 'AWS::ElasticLoadBalancingV2::TargetGroup',
-            DependsOn: 'ELB',
             Properties: {
                 HealthCheckEnabled: true,
                 HealthCheckIntervalSeconds: 30,
@@ -291,12 +307,8 @@ export default {
                 GroupDescription: cf.join('-', [cf.stackName, 'ecs-sg']),
                 VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc'])),
                 SecurityGroupIngress: [{
-                    CidrIp: '0.0.0.0/0',
-                    IpProtocol: 'tcp',
-                    FromPort: 636,
-                    ToPort: 636
-                },{
-                    CidrIp: '0.0.0.0/0',
+                    Description: 'ELB Traffic',
+                    SourceSecurityGroupId: cf.ref('ELBSecurityGroup'),
                     IpProtocol: 'tcp',
                     FromPort: 389,
                     ToPort: 389

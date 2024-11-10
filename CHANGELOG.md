@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v1.3.0
+
+- :rocket: Restrict all Task Traffic to ELB SG
+
 ### v1.2.0
 
 - :rocket: Add SG Names to policy
