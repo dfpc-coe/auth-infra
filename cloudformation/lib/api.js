@@ -113,14 +113,15 @@ export default {
         },
         TargetGroup: {
             Type: 'AWS::ElasticLoadBalancingV2::TargetGroup',
+            DependsOn: ['ELB'],
             Properties: {
                 HealthCheckEnabled: true,
                 HealthCheckIntervalSeconds: 30,
                 HealthCheckTimeoutSeconds: 10,
                 HealthyThresholdCount: 3,
                 HealthCheckProtocol: 'TCP',
-                HealthCheckPort: 389,
-                Port: 389,
+                HealthCheckPort: 3389,
+                Port: 3389,
                 Protocol: 'TCP',
                 TargetType: 'ip',
                 VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc']))
@@ -203,7 +204,7 @@ export default {
             Type: 'AWS::ECS::TaskDefinition',
             DependsOn: [
                 'LDAPMasterSecret',
-                'EFSAccessPointDAta'
+                'EFSAccessPointData'
             ],
             Properties: {
                 Family: cf.stackName,
@@ -236,17 +237,16 @@ export default {
                         SourceVolume: cf.join([cf.stackName, '-config']),
                     }],
                     PortMappings: [{
-                        ContainerPort: 389
+                        ContainerPort: 3389
                     }],
                     Environment: [
                         { Name: 'StackName',            Value: cf.stackName },
                         { Name: 'AWS_DEFAULT_REGION',   Value: cf.region },
                         { Name: 'LLDAP_LDAP_BASE_DN',   Value: cf.ref('LDAPBaseDN') },
-                        { Name: 'LLDAP_LDAP_PORT',      Value: '389' },
-                        { Name: 'LLDAP_LDAP_USER_PASS', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:username:AWSCURRENT}}') },
-                        { Name: 'LDAP_ADMIN_PASSWORD',  Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:password:AWSCURRENT}}') },
-                        { Name: 'LLDAP_JWT_SECRET',     Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/secret:SecretString::AWSCURRENT}}') },
-                        { Name: 'LLDAP_KEY_SEED',       Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/secret:SecretString::AWSCURRENT}}') },
+                        { Name: 'LLDAP_LDAP_PORT',      Value: '3389' },
+                        { Name: 'LLDAP_LDAP_USER_PASS', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:password:AWSCURRENT}}') },
+                        { Name: 'LLDAP_JWT_SECRET',     Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/signing:SecretString::AWSCURRENT}}') },
+                        { Name: 'LLDAP_KEY_SEED',       Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/seed:SecretString::AWSCURRENT}}') },
                     ],
                     LogConfiguration: {
                         LogDriver: 'awslogs',
@@ -283,7 +283,7 @@ export default {
                 },
                 LoadBalancers: [{
                     ContainerName: 'api',
-                    ContainerPort: 389,
+                    ContainerPort: 3389,
                     TargetGroupArn: cf.ref('TargetGroup')
                 }]
             }
@@ -302,8 +302,8 @@ export default {
                     Description: 'ELB Traffic',
                     SourceSecurityGroupId: cf.ref('ELBSecurityGroup'),
                     IpProtocol: 'tcp',
-                    FromPort: 389,
-                    ToPort: 389
+                    FromPort: 3389,
+                    ToPort: 3389
                 }]
             }
         },
