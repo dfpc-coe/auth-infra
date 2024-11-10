@@ -1,5 +1,0 @@
-dn: uid=ldapsvcaccount,dc=CUSTOM_ORG,dc=CUSTOM_TLD
-changetype: modify
-replace: userPassword
-userPassword: CUSTOM_SERVICE_PASSWORD
-

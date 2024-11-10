@@ -12,13 +12,10 @@ export default {
             Description: 'ACM SSL Certificate for HTTP Protocol',
             Type: 'String'
         },
-        LDAPOrganisation: {
-            Description: 'LDAP Org',
-            Type: 'String'
-        },
-        LDAPDomain: {
-            Description: 'LDAP Org',
-            Type: 'String'
+        LDAPBaseDN: {
+            Description: 'LDAP Base DN',
+            Type: 'String',
+            Default: 'dc=example,dc=com'
         }
     },
     Resources: {
@@ -43,17 +40,27 @@ export default {
                 KmsKeyId: cf.ref('KMS')
             }
         },
-        LDAPSVCSecret: {
+        LDAPKeySeedSecret: {
             Type: 'AWS::SecretsManager::Secret',
             Properties: {
-                Description: cf.join([cf.stackName, ' LDAP SVC Account Password']),
+                Description: cf.join([cf.stackName, ' LDAP Key Seed Secret']),
                 GenerateSecretString: {
-                    SecretStringTemplate: '{"username": "ldapsvcaccount"}',
-                    GenerateStringKey: 'password',
                     ExcludePunctuation: true,
                     PasswordLength: 32
                 },
-                Name: cf.join([cf.stackName, '/svc']),
+                Name: cf.join([cf.stackName, '/seed']),
+                KmsKeyId: cf.ref('KMS')
+            }
+        },
+        LDAPSigningSecret: {
+            Type: 'AWS::SecretsManager::Secret',
+            Properties: {
+                Description: cf.join([cf.stackName, ' LDAP JWT Signing Secret']),
+                GenerateSecretString: {
+                    ExcludePunctuation: true,
+                    PasswordLength: 32
+                },
+                Name: cf.join([cf.stackName, '/signing']),
                 KmsKeyId: cf.ref('KMS')
             }
         },
@@ -196,8 +203,7 @@ export default {
             Type: 'AWS::ECS::TaskDefinition',
             DependsOn: [
                 'LDAPMasterSecret',
-                'EFSAccessPointLDAP',
-                'EFSAccessPointSLAPD'
+                'EFSAccessPointDAta'
             ],
             Properties: {
                 Family: cf.stackName,
@@ -212,22 +218,12 @@ export default {
                 ExecutionRoleArn: cf.getAtt('ExecRole', 'Arn'),
                 TaskRoleArn: cf.getAtt('TaskRole', 'Arn'),
                 Volumes: [{
-                    Name: cf.join([cf.stackName, '-ldap']),
+                    Name: cf.join([cf.stackName, '-config']),
                     EFSVolumeConfiguration: {
                         FilesystemId: cf.ref('EFS'),
                         TransitEncryption: 'ENABLED',
                         AuthorizationConfig: {
-                            AccessPointId: cf.ref('EFSAccessPointLDAP')
-                        },
-                        RootDirectory: '/'
-                    }
-                },{
-                    Name: cf.join([cf.stackName, '-slapd']),
-                    EFSVolumeConfiguration: {
-                        FilesystemId: cf.ref('EFS'),
-                        TransitEncryption: 'ENABLED',
-                        AuthorizationConfig: {
-                            AccessPointId: cf.ref('EFSAccessPointSLAPD')
+                            AccessPointId: cf.ref('EFSAccessPointData')
                         },
                         RootDirectory: '/'
                     }
@@ -236,11 +232,8 @@ export default {
                     Name: 'api',
                     Image: cf.join([cf.accountId, '.dkr.ecr.', cf.region, '.amazonaws.com/coe-ecr-auth:', cf.ref('GitSha')]),
                     MountPoints: [{
-                        ContainerPath: '/var/lib/ldap',
-                        SourceVolume: cf.join([cf.stackName, '-ldap']),
-                    }, {
-                        ContainerPath: '/etc/ldap/slapd.d',
-                        SourceVolume: cf.join([cf.stackName, '-slapd']),
+                        ContainerPath: '/data',
+                        SourceVolume: cf.join([cf.stackName, '-config']),
                     }],
                     PortMappings: [{
                         ContainerPort: 389
@@ -248,13 +241,12 @@ export default {
                     Environment: [
                         { Name: 'StackName',            Value: cf.stackName },
                         { Name: 'AWS_DEFAULT_REGION',   Value: cf.region },
-                        { Name: 'LDAP_ORGANISATION',    Value: cf.ref('LDAPOrganisation') },
-                        { Name: 'LDAP_DOMAIN',          Value: cf.ref('LDAPDomain') },
-                        { Name: 'LDAP_ADMIN_USERNAME',  Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:username:AWSCURRENT}}') },
+                        { Name: 'LLDAP_LDAP_BASE_DN',   Value: cf.ref('LDAPBaseDN') },
+                        { Name: 'LLDAP_LDAP_PORT',      Value: '389' },
+                        { Name: 'LLDAP_LDAP_USER_PASS', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:username:AWSCURRENT}}') },
                         { Name: 'LDAP_ADMIN_PASSWORD',  Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:password:AWSCURRENT}}') },
-                        { Name: 'LDAP_CONFIG_PASSWORD', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:password:AWSCURRENT}}') },
-                        { Name: 'LDAP_SVC_USERNAME',    Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/svc:SecretString:username:AWSCURRENT}}') },
-                        { Name: 'LDAP_SVC_PASSWORD',    Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/svc:SecretString:password:AWSCURRENT}}') },
+                        { Name: 'LLDAP_JWT_SECRET',     Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/secret:SecretString::AWSCURRENT}}') },
+                        { Name: 'LLDAP_KEY_SEED',       Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/secret:SecretString::AWSCURRENT}}') },
                     ],
                     LogConfiguration: {
                         LogDriver: 'awslogs',
@@ -328,14 +320,6 @@ export default {
         LDAPAdminPassword: {
             Description: 'LDAP Admin Password',
             Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:password:AWSCURRENT}}')
-        },
-        LDAPSVCUsername: {
-            Description: 'LDAP SVC Username',
-            Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/svc:SecretString:username:AWSCURRENT}}')
-        },
-        LDAPSVCPassword: {
-            Description: 'LDAP SVC Password',
-            Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/svc:SecretString:password:AWSCURRENT}}')
         }
     }
 };

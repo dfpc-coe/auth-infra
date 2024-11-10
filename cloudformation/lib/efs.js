@@ -21,7 +21,7 @@ export default {
                     Value: cf.join('-', [cf.stackName, 'efs-sg'])
                 }],
                 GroupName: cf.join('-', [cf.stackName, 'efs-sg']),
-                GroupDescription: 'EFS to Auth ECS Service',
+                GroupDescription: 'Internval VPC to Auth EFS Service',
                 SecurityGroupIngress: [{
                     IpProtocol: 'tcp',
                     FromPort: 2049,
@@ -31,7 +31,7 @@ export default {
                 VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc'])),
             }
         },
-        EFSAccessPointLDAP: {
+        EFSAccessPointData: {
             Type: 'AWS::EFS::AccessPoint',
             Properties: {
                 FileSystemId: cf.ref('EFS'),
@@ -45,25 +45,7 @@ export default {
                         OwnerUid: 0,
                         Permissions: '0777'
                     },
-                    Path: '/ldap'
-                },
-            }
-        },
-        EFSAccessPointSLAPD: {
-            Type: 'AWS::EFS::AccessPoint',
-            Properties: {
-                FileSystemId: cf.ref('EFS'),
-                PosixUser: {
-                    Uid: 0,
-                    Gid: 0
-                },
-                RootDirectory: {
-                    CreationInfo: {
-                        OwnerGid: 0,
-                        OwnerUid: 0,
-                        Permissions: '0777'
-                    },
-                    Path: '/slapd.d'
+                    Path: '/data'
                 },
             }
         },
