@@ -8,6 +8,12 @@ export default {
             AllowedValues: [ 'true', 'false' ],
             Default: false
         },
+        ForceNewConfig: {
+            Description: 'Force a blank config file - permanently deleting current config',
+            Type: 'String',
+            AllowedValues: ['true', 'false'],
+            Default: 'false'
+        },
         SSLCertificateIdentifier: {
             Description: 'ACM SSL Certificate for HTTP Protocol',
             Type: 'String'
@@ -247,6 +253,7 @@ export default {
                     }],
                     Environment: [
                         { Name: 'StackName',            Value: cf.stackName },
+                        { Name: 'FORCE_NEW_CONFIG',     Value: cf.ref('ForceNewConfig') },
                         { Name: 'AWS_DEFAULT_REGION',   Value: cf.region },
                         { Name: 'LDAP_ORGANISATION',    Value: cf.ref('LDAPOrganisation') },
                         { Name: 'LDAP_DOMAIN',          Value: cf.ref('LDAPDomain') },

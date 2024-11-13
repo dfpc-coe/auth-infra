@@ -2,6 +2,11 @@
 
 set -euo pipefail
 
+if [[ ${FORCE_NEW_CONFIG} == "true" ]]; then
+    rm -rf "/var/lib/ldap/*"
+    rm -rf "/etc/ldap/slapd.d/*"
+fi
+
 echo "Generating LDIF"
 echo "Domain: ${LDAP_DOMAIN}"
 
