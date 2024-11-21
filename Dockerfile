@@ -11,4 +11,4 @@ ENV LDAP_ALLOW_ANON_BINDING=no
 ENV NVM_DIR=/usr/local/nvm
 ENV NODE_VERSION=22
 
-COPY config/overlays.ldif /schemas/
+COPY ldif/overlays.ldif /schemas/
