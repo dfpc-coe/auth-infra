@@ -199,8 +199,7 @@ export default {
             DependsOn: [
                 'LDAPMasterSecret',
                 'LDAPSVCSecret',
-                'EFSAccessPointLDAP',
-                'EFSAccessPointSLAPD'
+                'EFSAccessPointLDAP'
             ],
             Properties: {
                 Family: cf.stackName,
@@ -224,26 +223,13 @@ export default {
                         },
                         RootDirectory: '/'
                     }
-                },{
-                    Name: cf.join([cf.stackName, '-slapd']),
-                    EFSVolumeConfiguration: {
-                        FilesystemId: cf.ref('EFS'),
-                        TransitEncryption: 'ENABLED',
-                        AuthorizationConfig: {
-                            AccessPointId: cf.ref('EFSAccessPointSLAPD')
-                        },
-                        RootDirectory: '/'
-                    }
                 }],
                 ContainerDefinitions: [{
                     Name: 'api',
                     Image: cf.join([cf.accountId, '.dkr.ecr.', cf.region, '.amazonaws.com/coe-ecr-auth:', cf.ref('GitSha')]),
                     MountPoints: [{
-                        ContainerPath: '/var/lib/ldap',
+                        ContainerPath: '/bitnami/openldap',
                         SourceVolume: cf.join([cf.stackName, '-ldap']),
-                    }, {
-                        ContainerPath: '/etc/ldap/slapd.d',
-                        SourceVolume: cf.join([cf.stackName, '-slapd']),
                     }],
                     PortMappings: [{
                         ContainerPort: 1389
