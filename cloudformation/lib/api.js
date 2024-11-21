@@ -8,22 +8,12 @@ export default {
             AllowedValues: [ 'true', 'false' ],
             Default: false
         },
-        ForceNewConfig: {
-            Description: 'Force a blank config file - permanently deleting current config',
-            Type: 'String',
-            AllowedValues: ['true', 'false'],
-            Default: 'false'
-        },
         SSLCertificateIdentifier: {
             Description: 'ACM SSL Certificate for HTTP Protocol',
             Type: 'String'
         },
-        LDAPOrganisation: {
-            Description: 'LDAP Org',
-            Type: 'String'
-        },
-        LDAPDomain: {
-            Description: 'LDAP Org',
+        LDAPRoot: {
+            Description: 'LDAP Root',
             Type: 'String'
         }
     },
@@ -118,8 +108,8 @@ export default {
                 HealthCheckTimeoutSeconds: 10,
                 HealthyThresholdCount: 3,
                 HealthCheckProtocol: 'TCP',
-                HealthCheckPort: 389,
-                Port: 389,
+                HealthCheckPort: 1389,
+                Port: 1389,
                 Protocol: 'TCP',
                 TargetType: 'ip',
                 VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc']))
@@ -249,19 +239,17 @@ export default {
                         SourceVolume: cf.join([cf.stackName, '-slapd']),
                     }],
                     PortMappings: [{
-                        ContainerPort: 389
+                        ContainerPort: 1389
                     }],
                     Environment: [
                         { Name: 'StackName',            Value: cf.stackName },
-                        { Name: 'FORCE_NEW_CONFIG',     Value: cf.ref('ForceNewConfig') },
                         { Name: 'AWS_DEFAULT_REGION',   Value: cf.region },
-                        { Name: 'LDAP_ORGANISATION',    Value: cf.ref('LDAPOrganisation') },
-                        { Name: 'LDAP_DOMAIN',          Value: cf.ref('LDAPDomain') },
+                        { Name: 'LDAP_ROOT',            Value: cf.ref('LDAPRoot') },
                         { Name: 'LDAP_ADMIN_USERNAME',  Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:username:AWSCURRENT}}') },
                         { Name: 'LDAP_ADMIN_PASSWORD',  Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:password:AWSCURRENT}}') },
                         { Name: 'LDAP_CONFIG_PASSWORD', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:password:AWSCURRENT}}') },
-                        { Name: 'LDAP_SVC_USERNAME',    Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/svc:SecretString:username:AWSCURRENT}}') },
-                        { Name: 'LDAP_SVC_PASSWORD',    Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/svc:SecretString:password:AWSCURRENT}}') },
+                        { Name: 'LDAP_USERS',           Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/svc:SecretString:username:AWSCURRENT}}') },
+                        { Name: 'LDAP_PASSWORDS',       Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/svc:SecretString:password:AWSCURRENT}}') },
                     ],
                     LogConfiguration: {
                         LogDriver: 'awslogs',
@@ -298,7 +286,7 @@ export default {
                 },
                 LoadBalancers: [{
                     ContainerName: 'api',
-                    ContainerPort: 389,
+                    ContainerPort: 1389,
                     TargetGroupArn: cf.ref('TargetGroup')
                 }]
             }
@@ -317,8 +305,8 @@ export default {
                     Description: 'ELB Traffic',
                     SourceSecurityGroupId: cf.ref('ELBSecurityGroup'),
                     IpProtocol: 'tcp',
-                    FromPort: 389,
-                    ToPort: 389
+                    FromPort: 1389,
+                    ToPort: 1389
                 }]
             }
         },
