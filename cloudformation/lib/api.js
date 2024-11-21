@@ -12,8 +12,13 @@ export default {
             Description: 'ACM SSL Certificate for HTTP Protocol',
             Type: 'String'
         },
+        HostedURL: {
+            Description: 'Hosted Domain: auth.example.com',
+            Type: 'String'
+        },
         LDAPRoot: {
             Description: 'LDAP Root',
+            Default: 'dc=example,dc=com',
             Type: 'String'
         }
     },
@@ -102,6 +107,7 @@ export default {
         },
         TargetGroup: {
             Type: 'AWS::ElasticLoadBalancingV2::TargetGroup',
+            DependsOn: 'ELB',
             Properties: {
                 HealthCheckEnabled: true,
                 HealthCheckIntervalSeconds: 30,
@@ -192,6 +198,7 @@ export default {
             Type: 'AWS::ECS::TaskDefinition',
             DependsOn: [
                 'LDAPMasterSecret',
+                'LDAPSVCSecret',
                 'EFSAccessPointLDAP',
                 'EFSAccessPointSLAPD'
             ],
@@ -312,9 +319,13 @@ export default {
         },
     },
     Outputs: {
-        API: {
-            Description: 'API ELB',
-            Value: cf.join(['http://', cf.getAtt('ELB', 'DNSName')])
+        LDAPS: {
+            Description: 'LDAPS ELB',
+            Value: cf.join(['ldaps://', cf.getAtt('ELB', 'DNSName'), ':636'])
+        },
+        LDAPSExternal: {
+            Description: 'LDAPS External',
+            Value: cf.join(['ldaps://', cf.ref('HostedURL'), ':636'])
         },
         LDAPAdminUsername: {
             Description: 'LDAP Admin Username',
