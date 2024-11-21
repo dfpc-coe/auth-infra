@@ -91,8 +91,30 @@ export default {
                     IpProtocol: 'tcp',
                     FromPort: 636,
                     ToPort: 636
+                },{
+                    Description: 'Internal Traffic',
+                    CidrIp: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc-cidr'])),
+                    IpProtocol: 'tcp',
+                    FromPort: 443,
+                    ToPort: 443,
                 }],
                 VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc']))
+            }
+        },
+        WebListener: {
+            Type: 'AWS::ElasticLoadBalancingV2::Listener',
+            Properties: {
+                DefaultActions: [{
+                    Type: 'forward',
+                    TargetGroupArn: cf.ref('TargetGroupWeb')
+                }],
+                Certificates: [{
+                    CertificateArn: cf.join(['arn:', cf.partition, ':acm:', cf.region, ':', cf.accountId, ':certificate/', cf.ref('SSLCertificateIdentifier')])
+                }],
+                SslPolicy: 'ELBSecurityPolicy-TLS-1-2-2017-01',
+                LoadBalancerArn: cf.ref('ELB'),
+                Port: 443,
+                Protocol: 'TLS'
             }
         },
         HttpListener: {
@@ -122,6 +144,22 @@ export default {
                 HealthCheckProtocol: 'TCP',
                 HealthCheckPort: 3389,
                 Port: 3389,
+                Protocol: 'TCP',
+                TargetType: 'ip',
+                VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc']))
+            }
+        },
+        TargetGroupWeb: {
+            Type: 'AWS::ElasticLoadBalancingV2::TargetGroup',
+            DependsOn: ['ELB'],
+            Properties: {
+                HealthCheckEnabled: true,
+                HealthCheckIntervalSeconds: 30,
+                HealthCheckTimeoutSeconds: 10,
+                HealthyThresholdCount: 3,
+                HealthCheckProtocol: 'TCP',
+                HealthCheckPort: 17170,
+                Port: 17170,
                 Protocol: 'TCP',
                 TargetType: 'ip',
                 VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc']))
@@ -237,13 +275,16 @@ export default {
                         SourceVolume: cf.join([cf.stackName, '-config']),
                     }],
                     PortMappings: [{
-                        ContainerPort: 3389
+                        ContainerPort: 3389,
+                    },{
+                        ContainerPort: 17170
                     }],
                     Environment: [
                         { Name: 'StackName',            Value: cf.stackName },
                         { Name: 'AWS_DEFAULT_REGION',   Value: cf.region },
                         { Name: 'LLDAP_LDAP_BASE_DN',   Value: cf.ref('LDAPBaseDN') },
                         { Name: 'LLDAP_LDAP_PORT',      Value: '3389' },
+                        { Name: 'LLDAP_HTTP_PORT',      Value: '17170' },
                         { Name: 'LLDAP_LDAP_USER_PASS', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:password:AWSCURRENT}}') },
                         { Name: 'LLDAP_JWT_SECRET',     Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/signing:SecretString::AWSCURRENT}}') },
                         { Name: 'LLDAP_KEY_SEED',       Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/seed:SecretString::AWSCURRENT}}') },
@@ -285,6 +326,10 @@ export default {
                     ContainerName: 'api',
                     ContainerPort: 3389,
                     TargetGroupArn: cf.ref('TargetGroup')
+                },{
+                    ContainerName: 'api',
+                    ContainerPort: 17170,
+                    TargetGroupArn: cf.ref('TargetGroupWeb')
                 }]
             }
         },
@@ -302,6 +347,12 @@ export default {
                     Description: 'ELB Traffic',
                     SourceSecurityGroupId: cf.ref('ELBSecurityGroup'),
                     IpProtocol: 'tcp',
+                    FromPort: 17170,
+                    ToPort: 17170,
+                },{
+                    Description: 'Internal Traffic',
+                    SourceSecurityGroupId: cf.ref('ELBSecurityGroup'),
+                    IpProtocol: 'tcp',
                     FromPort: 3389,
                     ToPort: 3389
                 }]
@@ -309,9 +360,13 @@ export default {
         },
     },
     Outputs: {
-        API: {
-            Description: 'API ELB',
-            Value: cf.join(['http://', cf.getAtt('ELB', 'DNSName')])
+        WEBAPI: {
+            Description: 'Web ELB',
+            Value: cf.join(['https://', cf.getAtt('ELB', 'DNSName')])
+        },
+        LDAPAPI: {
+            Description: 'LDAPS ELB',
+            Value: cf.join(['ldaps://', cf.getAtt('ELB', 'DNSName'), ':636'])
         },
         LDAPAdminUsername: {
             Description: 'LDAP Admin Username',
