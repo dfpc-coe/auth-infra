@@ -112,6 +112,7 @@ export default {
         },
         TargetGroup: {
             Type: 'AWS::ElasticLoadBalancingV2::TargetGroup',
+            DependsOn: 'ELB',
             Properties: {
                 HealthCheckEnabled: true,
                 HealthCheckIntervalSeconds: 30,
