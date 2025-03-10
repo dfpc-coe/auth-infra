@@ -4,13 +4,55 @@
 
 ## AWS Deployment
 
-### Auth Deployment
+### 1. Pre-Reqs
+
+The Auth-Infra service assumes some pre-requisite dependencies are deployed before
+initial deployment.
+The following are dependencies which need to be created:
+
+| Name                  | Notes |
+| --------------------- | ----- |
+| `coe-vpc-<name>`      | VPC & networking to place tasks in - [repo](https://github.com/dfpc-coe/vpc)      |
+| `coe-ecs-<name>`      | ECS Cluster for API Service - [repo](https://github.com/dfpc-coe/ecs)             |
+| `coe-ecr-auth`        | ECR Repository for storing Auth-Infra Images - [repo](https://github.com/dfpc-coe/ecr)   |
+
+An AWS ACM certificate must also be generated that covers the subdomain that the Auth-Infra is deployed to.
+
+### 2. Installing Dependencies
 
 From the root directory, install the deploy dependencies
 
 ```sh
 npm install
 ```
+
+### 3. Building Docker Images & Pushing to ECR
+You also need to make sure that [Docker](https://docs.docker.com/engine/install/) and [Docker Compose](https://docs.docker.com/compose/install/) are installed on your local machine. 
+
+### 3. Prerequisites
+
+The following environment variable need to be set: 
+```
+export GITSHA=$(git rev-parse HEAD)
+export AWS_REGION='us-east-1'
+export AWS_ACCOUNT_ID='123456789012'
+export Environment='prod'
+
+```
+
+### 4. Building Docker Images & Pushing to ECR
+
+An script to build the docker image and publish it to your ECR is provided and can be run using:
+
+```
+npm run build
+```
+
+from the root of the project. Ensure that you have created the necessary ECR repositories as descrived in the
+previos step and that you have AWS credentials provided in your current terminal environment as an `aws ecr get-login-password`
+call will be issued.
+
+### 5. Auth Deployment
 
 Deployment to AWS is handled via AWS Cloudformation. The template can be found in the `./cloudformation`
 directory. The deployment itself is performed by [Deploy](https://github.com/openaddresses/deploy) which
