@@ -34,7 +34,7 @@ jobs:
       - name: Docker Build Task
         run: npm run build
         env:
-          AWS_ACCOUNT_ID: ${{secret.AWS_ACCOUNT_ID}}
+          AWS_ACCOUNT_ID: ${{secrets.AWS_ACCOUNT_ID}}
           AWS_REGION: ${{secrets.AWS_REGION}}
 
       - name: Configure AWS Credentials (STAGING)
@@ -47,5 +47,5 @@ jobs:
       - name: Docker Build Task
         run: npm run build
         env:
-          AWS_ACCOUNT_ID: ${{secret.AWS_STAGING_ACCOUNT_ID}}
+          AWS_ACCOUNT_ID: ${{secrets.AWS_STAGING_ACCOUNT_ID}}
           AWS_REGION: ${{secrets.AWS_STAGING_REGION}}
