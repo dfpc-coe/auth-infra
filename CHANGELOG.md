@@ -12,6 +12,11 @@
 
 ### Pending Release
 
+### v1.4.0 - 2025-03-10
+
+- :tada: Add build script for folks building outside the context of GH Actions
+- :rocket: Update GH Actions to use the included build script
+
 ### v1.3.0
 
 - :rocket: Restrict all Task Traffic to ELB SG
