@@ -28,7 +28,7 @@ export default {
                     ToPort: 2049,
                     CidrIp: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc-cidr']))
                 }],
-                VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc'])),
+                VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc']))
             }
         },
         EFSAccessPointLDAP: {
@@ -46,7 +46,7 @@ export default {
                         Permissions: '0777'
                     },
                     Path: '/ldap'
-                },
+                }
             }
         },
         EFSAccessPointSLAPD: {
@@ -64,7 +64,7 @@ export default {
                         Permissions: '0777'
                     },
                     Path: '/slapd.d'
-                },
+                }
             }
         },
         EFSMountTargetSubnetPrivateA: {

@@ -1,4 +1,3 @@
-import fs from 'node:fs/promises';
 import CP from 'child_process';
 
 process.env.GITSHA = sha();
@@ -9,7 +8,7 @@ for (const env of [
     'GITSHA',
     'AWS_REGION',
     'AWS_ACCOUNT_ID',
-    'Environment',
+    'Environment'
 ]) {
     if (!process.env[env]) {
         console.error(`${env} Env Var must be set`);
@@ -44,8 +43,8 @@ function authinfraopenldap() {
     return new Promise((resolve, reject) => {
         const $ = CP.exec(`
             docker compose build openldap \
-            && docker tag auth-infra-openldap:latest "$\{AWS_ACCOUNT_ID\}.dkr.ecr.$\{AWS_REGION\}.amazonaws.com/coe-ecr-etl:$\{GITSHA\}" \
-            && docker push "$\{AWS_ACCOUNT_ID\}.dkr.ecr.$\{AWS_REGION\}.amazonaws.com/coe-ecr-etl:$\{GITSHA\}"
+            && docker tag auth-infra-openldap:latest "$\{AWS_ACCOUNT_ID\}.dkr.ecr.$\{AWS_REGION\}.amazonaws.com/coe-ecr-auth:$\{GITSHA\}" \
+            && docker push "$\{AWS_ACCOUNT_ID\}.dkr.ecr.$\{AWS_REGION\}.amazonaws.com/coe-ecr-auth:$\{GITSHA\}"
         `, (err) => {
             if (err) return reject(err);
             return resolve();

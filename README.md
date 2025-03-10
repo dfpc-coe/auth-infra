@@ -33,11 +33,9 @@ You also need to make sure that [Docker](https://docs.docker.com/engine/install/
 
 The following environment variable need to be set: 
 ```
-export GITSHA=$(git rev-parse HEAD)
 export AWS_REGION='us-east-1'
 export AWS_ACCOUNT_ID='123456789012'
 export Environment='prod'
-
 ```
 
 ### 4. Building Docker Images & Pushing to ECR

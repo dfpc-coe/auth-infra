@@ -5,7 +5,7 @@ export default {
         EnableExecute: {
             Description: 'Allow SSH into docker container - should only be enabled for limited debugging',
             Type: 'String',
-            AllowedValues: [ 'true', 'false' ],
+            AllowedValues: ['true', 'false'],
             Default: false
         },
         ForceNewConfig: {
@@ -244,10 +244,10 @@ export default {
                     Image: cf.join([cf.accountId, '.dkr.ecr.', cf.region, '.amazonaws.com/coe-ecr-auth:', cf.ref('GitSha')]),
                     MountPoints: [{
                         ContainerPath: '/var/lib/ldap',
-                        SourceVolume: cf.join([cf.stackName, '-ldap']),
+                        SourceVolume: cf.join([cf.stackName, '-ldap'])
                     }, {
                         ContainerPath: '/etc/ldap/slapd.d',
-                        SourceVolume: cf.join([cf.stackName, '-slapd']),
+                        SourceVolume: cf.join([cf.stackName, '-slapd'])
                     }],
                     PortMappings: [{
                         ContainerPort: 389
@@ -262,7 +262,7 @@ export default {
                         { Name: 'LDAP_ADMIN_PASSWORD',  Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:password:AWSCURRENT}}') },
                         { Name: 'LDAP_CONFIG_PASSWORD', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:password:AWSCURRENT}}') },
                         { Name: 'LDAP_SVC_USERNAME',    Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/svc:SecretString:username:AWSCURRENT}}') },
-                        { Name: 'LDAP_SVC_PASSWORD',    Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/svc:SecretString:password:AWSCURRENT}}') },
+                        { Name: 'LDAP_SVC_PASSWORD',    Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/svc:SecretString:password:AWSCURRENT}}') }
                     ],
                     LogConfiguration: {
                         LogDriver: 'awslogs',
@@ -322,7 +322,7 @@ export default {
                     ToPort: 389
                 }]
             }
-        },
+        }
     },
     Outputs: {
         API: {
