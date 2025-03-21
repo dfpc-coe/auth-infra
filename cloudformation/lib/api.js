@@ -18,6 +18,11 @@ export default {
             Description: 'ACM SSL Certificate for HTTP Protocol',
             Type: 'String'
         },
+        LDAPLogLevel: {
+            Description: 'See https://www.openldap.org/doc/admin24/slapdconf2.html',
+            Type: Number,
+            Default: 0
+        },
         LDAPOrganisation: {
             Description: 'LDAP Org',
             Type: 'String'
@@ -258,6 +263,7 @@ export default {
                         { Name: 'AWS_DEFAULT_REGION',   Value: cf.region },
                         { Name: 'LDAP_ORGANISATION',    Value: cf.ref('LDAPOrganisation') },
                         { Name: 'LDAP_DOMAIN',          Value: cf.ref('LDAPDomain') },
+                        { Name: 'LDAP_LOG_LEVEL',       Value: cf.ref('LDAPLogLevel') },
                         { Name: 'LDAP_ADMIN_USERNAME',  Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:username:AWSCURRENT}}') },
                         { Name: 'LDAP_ADMIN_PASSWORD',  Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:password:AWSCURRENT}}') },
                         { Name: 'LDAP_CONFIG_PASSWORD', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:password:AWSCURRENT}}') },
