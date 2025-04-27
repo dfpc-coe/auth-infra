@@ -8,22 +8,12 @@ export default {
             AllowedValues: ['true', 'false'],
             Default: false
         },
-        ForceNewConfig: {
-            Description: 'Force a blank config file - permanently deleting current config',
-            Type: 'String',
-            AllowedValues: ['true', 'false'],
-            Default: 'false'
-        },
         SSLCertificateIdentifier: {
             Description: 'ACM SSL Certificate for HTTP Protocol',
             Type: 'String'
         },
-        LDAPOrganisation: {
-            Description: 'LDAP Org',
-            Type: 'String'
-        },
-        LDAPDomain: {
-            Description: 'LDAP Org',
+        AuthentikAdminUserEmail: {
+            Description: 'E-Mail address of the Authentik akadmin user',
             Type: 'String'
         }
     },
@@ -35,24 +25,57 @@ export default {
                 RetentionInDays: 7
             }
         },
-        LDAPMasterSecret: {
+        AuthentikSecretKey: {
             Type: 'AWS::SecretsManager::Secret',
             Properties: {
-                Description: cf.join([cf.stackName, ' LDAP Master Password']),
+                Description: cf.join([cf.stackName, ' Authentik Secret Key']),
                 GenerateSecretString: {
-                    SecretStringTemplate: '{"username": "admin"}',
+                    ExcludeCharacters: "\"@/\\",
+                    PasswordLength: 64
+                },
+                Name: cf.join([cf.stackName, '/authentik-secret-key']),
+                KmsKeyId: cf.ref('KMS')
+            }
+        },
+        AuthentikAdminUserPassword: {
+            Type: 'AWS::SecretsManager::Secret',
+            Properties: {
+                Description: cf.join([cf.stackName, ' Authentik Admin User Password']),
+                GenerateSecretString: {
+                    SecretStringTemplate: '{"username": "akadmin"}',
                     GenerateStringKey: 'password',
                     ExcludePunctuation: true,
                     PasswordLength: 32
                 },
-                Name: cf.join([cf.stackName, '/admin']),
+                Name: cf.join([cf.stackName, '/authentik-admin-user-password']),
+                KmsKeyId: cf.ref('KMS')
+            }
+        },
+        AuthentikAdminUserToken: {
+            Type: 'AWS::SecretsManager::Secret',
+            Properties: {
+                Description: cf.join([cf.stackName, ' Authentik Admin User Token']),
+                GenerateSecretString: {
+                    ExcludeCharacters: "\"@/\\",
+                    PasswordLength: 32
+                },
+                Name: cf.join([cf.stackName, '/authentik-admin-token']),
+                KmsKeyId: cf.ref('KMS')
+            }
+        },
+        AuthentikLDAPToken: {
+            Type: 'AWS::SecretsManager::Secret',
+            Properties: {
+                Description: cf.join([cf.stackName, ' Authentik LDAP Outpost Token']),
+                "SecretString": "replace-me",
+                Name: cf.join([cf.stackName, '/authentik-ldap-token']),
                 KmsKeyId: cf.ref('KMS')
             }
         },
         LDAPSVCSecret: {
             Type: 'AWS::SecretsManager::Secret',
             Properties: {
-                Description: cf.join([cf.stackName, ' LDAP SVC Account Password']),
+                Description: cf.join([cf.stackName, ' LDAP Service Account Password']),
                 GenerateSecretString: {
                     SecretStringTemplate: '{"username": "ldapsvcaccount"}',
                     GenerateStringKey: 'password',
@@ -63,12 +86,13 @@ export default {
                 KmsKeyId: cf.ref('KMS')
             }
         },
-        ELB: {
+        ALB: {
             Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer',
             Properties: {
                 Name: cf.stackName,
-                Type: 'network',
-                SecurityGroups: [cf.ref('ELBSecurityGroup')],
+                Type: 'application',
+                Scheme: 'internet-facing',
+                SecurityGroups: [cf.ref('ALBSecurityGroup')],
                 Subnets:  [
                     cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-public-a'])),
                     cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-public-b']))
@@ -76,53 +100,76 @@ export default {
             }
 
         },
-        ELBSecurityGroup: {
+        ALBSecurityGroup: {
             Type : 'AWS::EC2::SecurityGroup',
             Properties : {
                 Tags: [{
                     Key: 'Name',
-                    Value: cf.join('-', [cf.stackName, 'elb-sg'])
+                    Value: cf.join('-', [cf.stackName, 'alb-sg'])
                 }],
-                GroupName: cf.join('-', [cf.stackName, 'elb-sg']),
-                GroupDescription: 'Allow 636 Access to ELB',
+                GroupName: cf.join('-', [cf.stackName, 'alb-sg']),
+                GroupDescription: 'Allow 80 and 443 Access to ALB',
                 SecurityGroupIngress: [{
                     CidrIp: '0.0.0.0/0',
                     IpProtocol: 'tcp',
-                    FromPort: 636,
-                    ToPort: 636
+                    FromPort: 443,
+                    ToPort: 443
+                },{
+                    CidrIp: '0.0.0.0/0',
+                    IpProtocol: 'tcp',
+                    FromPort: 80,
+                    ToPort: 80
                 }],
                 VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc']))
             }
         },
-        HttpListener: {
+        HTTPListener: {
             Type: 'AWS::ElasticLoadBalancingV2::Listener',
             Properties: {
+                DefaultActions: [{
+                    Type: 'redirect',
+                    RedirectConfig: {
+                        Protocol: "HTTPS",
+                        StatusCode: "HTTP_301"
+                    }
+                }],
+                LoadBalancerArn: cf.ref('ALB'),
+                Port: 80,
+                Protocol: "HTTP"
+            }
+        },
+        HTTPSListener: {
+            Type: 'AWS::ElasticLoadBalancingV2::Listener',
+            Properties: {
+                Certificates: [{
+                    CertificateArn: cf.join(['arn:', cf.partition, ':acm:', cf.region, ':', cf.accountId, ':certificate/', cf.ref('SSLCertificateIdentifier')])
+                }],
                 DefaultActions: [{
                     Type: 'forward',
                     TargetGroupArn: cf.ref('TargetGroup')
                 }],
-                Certificates: [{
-                    CertificateArn: cf.join(['arn:', cf.partition, ':acm:', cf.region, ':', cf.accountId, ':certificate/', cf.ref('SSLCertificateIdentifier')])
-                }],
-                SslPolicy: 'ELBSecurityPolicy-TLS-1-2-2017-01',
-                LoadBalancerArn: cf.ref('ELB'),
-                Port: 636,
-                Protocol: 'TLS'
+                LoadBalancerArn: cf.ref('ALB'),
+                Port: 443,
+                Protocol: "HTTPS"
             }
-        },
+        },    
         TargetGroup: {
             Type: 'AWS::ElasticLoadBalancingV2::TargetGroup',
-            DependsOn: 'ELB',
+            DependsOn: 'ALB',
             Properties: {
-                HealthCheckEnabled: true,
-                HealthCheckIntervalSeconds: 30,
-                HealthCheckTimeoutSeconds: 10,
-                HealthyThresholdCount: 3,
-                HealthCheckProtocol: 'TCP',
-                HealthCheckPort: 389,
-                Port: 389,
-                Protocol: 'TCP',
-                TargetType: 'ip',
+                HealthCheckPath: "/-/health/live/",
+                Matcher: {
+                    HttpCode: "200"
+                },
+                Port: 9000,
+                Protocol: "HTTP",
+                TargetGroupAttributes: [
+                    {
+                        Key: "stickiness.enabled",
+                        Value: "false"
+                    }
+                ],
+                TargetType: "ip",
                 VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc']))
             }
         },
@@ -160,6 +207,24 @@ export default {
                                 'logs:DescribeLogStreams'
                             ],
                             Resource: [cf.join(['arn:', cf.partition, ':logs:*:*:*'])]
+                        },{
+                            Effect: 'Allow',
+                            Action: [
+                                'kms:Decrypt',
+                                'kms:GenerateDataKey'
+                            ],
+                            Resource: [
+                                cf.getAtt('KMS', 'Arn'),
+                            ]
+                        },{
+                            Effect: 'Allow',
+                            Action: [
+                                'secretsmanager:DescribeSecret',
+                                'secretsmanager:GetSecretValue'
+                            ],
+                            Resource: [
+                                cf.join(['arn:', cf.partition, ':secretsmanager:', cf.region, ':', cf.accountId, ':secret:', cf.stackName, '/*'])
+                            ]
                         }]
                     }
                 }]
@@ -190,6 +255,25 @@ export default {
                                 'logs:DescribeLogStreams'
                             ],
                             Resource: [cf.join(['arn:', cf.partition, ':logs:*:*:*'])]
+                        },{
+                            Effect: 'Allow',
+                            Action: [
+                                'kms:Decrypt',
+                                'kms:GenerateDataKey'
+                            ],
+                            Resource: [
+                                cf.getAtt('KMS', 'Arn'),
+                            ]
+                        },{
+                            Effect: 'Allow',
+                            Action: [
+                                'secretsmanager:Describe*',
+                                'secretsmanager:Get*',
+                                'secretsmanager:List*'
+                            ],
+                            Resource: [
+                                cf.join(['arn:', cf.partition, ':secretsmanager:', cf.region, ':', cf.accountId, ':secret:', cf.stackName, '/*'])
+                            ]
                         }]
                     }
                 }],
@@ -199,17 +283,17 @@ export default {
                 Path: '/service-role/'
             }
         },
-        TaskDefinition: {
+        ServerTaskDefinition: {
             Type: 'AWS::ECS::TaskDefinition',
             DependsOn: [
-                'LDAPMasterSecret',
-                'EFSAccessPointLDAP',
-                'EFSAccessPointSLAPD'
+                'DBMasterSecret',
+                'AuthentikSecretKey',
+                'EFSAccessPointMedia'
             ],
             Properties: {
                 Family: cf.stackName,
-                Cpu: 1024 * 2,
-                Memory: 4096 * 2,
+                Cpu: 512,
+                Memory: 1024,
                 NetworkMode: 'awsvpc',
                 RequiresCompatibilities: ['FARGATE'],
                 Tags: [{
@@ -219,50 +303,48 @@ export default {
                 ExecutionRoleArn: cf.getAtt('ExecRole', 'Arn'),
                 TaskRoleArn: cf.getAtt('TaskRole', 'Arn'),
                 Volumes: [{
-                    Name: cf.join([cf.stackName, '-ldap']),
+                    Name: cf.join([cf.stackName, '-media']),
                     EFSVolumeConfiguration: {
                         FilesystemId: cf.ref('EFS'),
                         TransitEncryption: 'ENABLED',
                         AuthorizationConfig: {
-                            AccessPointId: cf.ref('EFSAccessPointLDAP')
-                        },
-                        RootDirectory: '/'
-                    }
-                },{
-                    Name: cf.join([cf.stackName, '-slapd']),
-                    EFSVolumeConfiguration: {
-                        FilesystemId: cf.ref('EFS'),
-                        TransitEncryption: 'ENABLED',
-                        AuthorizationConfig: {
-                            AccessPointId: cf.ref('EFSAccessPointSLAPD')
+                            AccessPointId: cf.ref('EFSAccessPointMedia')
                         },
                         RootDirectory: '/'
                     }
                 }],
                 ContainerDefinitions: [{
-                    Name: 'api',
-                    Image: cf.join([cf.accountId, '.dkr.ecr.', cf.region, '.amazonaws.com/coe-ecr-auth:', cf.ref('GitSha')]),
+                    Name: 'AuthentikServerContainer',
+                    Command: [ 'server' ],
+                    HealthCheck: { 
+                        Command: [
+                            'CMD', 
+                            'ak', 
+                            'healthcheck'
+                        ],
+                        Interval: 30,
+                        Retries: 3,
+                        StartPeriod: 60,
+                        Timeout: 30
+                    },
+                    Image: 'ghcr.io/goauthentik/server:2025.2.4',
                     MountPoints: [{
-                        ContainerPath: '/var/lib/ldap',
-                        SourceVolume: cf.join([cf.stackName, '-ldap'])
-                    }, {
-                        ContainerPath: '/etc/ldap/slapd.d',
-                        SourceVolume: cf.join([cf.stackName, '-slapd'])
+                        ContainerPath: '/media',
+                        SourceVolume: cf.join([cf.stackName, '-media'])
                     }],
                     PortMappings: [{
-                        ContainerPort: 389
+                        ContainerPort: 9000
                     }],
                     Environment: [
-                        { Name: 'StackName',            Value: cf.stackName },
-                        { Name: 'FORCE_NEW_CONFIG',     Value: cf.ref('ForceNewConfig') },
-                        { Name: 'AWS_DEFAULT_REGION',   Value: cf.region },
-                        { Name: 'LDAP_ORGANISATION',    Value: cf.ref('LDAPOrganisation') },
-                        { Name: 'LDAP_DOMAIN',          Value: cf.ref('LDAPDomain') },
-                        { Name: 'LDAP_ADMIN_USERNAME',  Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:username:AWSCURRENT}}') },
-                        { Name: 'LDAP_ADMIN_PASSWORD',  Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:password:AWSCURRENT}}') },
-                        { Name: 'LDAP_CONFIG_PASSWORD', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:password:AWSCURRENT}}') },
-                        { Name: 'LDAP_SVC_USERNAME',    Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/svc:SecretString:username:AWSCURRENT}}') },
-                        { Name: 'LDAP_SVC_PASSWORD',    Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/svc:SecretString:password:AWSCURRENT}}') }
+                        { Name: 'StackName',                    Value: cf.stackName },
+                        { Name: 'AWS_DEFAULT_REGION',           Value: cf.region },
+                        { Name: 'AUTHENTIK_POSTGRESQL__HOST',   Value: cf.getAtt('DBCluster', 'Endpoint.Address') },
+                        { Name: 'AUTHENTIK_POSTGRESQL__USER',   Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/rds/secret:SecretString:username:AWSCURRENT}}') },
+                        { Name: 'AUTHENTIK_REDIS__HOST',        Value: cf.getAtt('AuthentikRedis', 'PrimaryEndPoint.Address') }
+                    ],
+                    Secrets: [
+                        { Name: 'AUTHENTIK_POSTGRESQL__PASSWORD',   ValueFrom: cf.join([cf.ref('DBMasterSecret'), ':password::']) },
+                        { Name: 'AUTHENTIK_SECRET_KEY',             ValueFrom: cf.ref('AuthentikSecretKey') }
                     ],
                     LogConfiguration: {
                         LogDriver: 'awslogs',
@@ -273,35 +355,160 @@ export default {
                             'awslogs-create-group': true
                         }
                     },
+                    RestartPolicy: { 
+                        Enabled: true
+                    }, 
                     Essential: true
                 }]
             }
         },
-        Service: {
+        WorkerTaskDefinition: {
+            Type: 'AWS::ECS::TaskDefinition',
+            DependsOn: [
+                'DBMasterSecret',
+                'AuthentikSecretKey',
+                'EFSAccessPointMedia'
+            ],
+            Properties: {
+                Family: cf.stackName,
+                Cpu: 512,
+                Memory: 1024,
+                NetworkMode: 'awsvpc',
+                RequiresCompatibilities: ['FARGATE'],
+                Tags: [{
+                    Key: 'Name',
+                    Value: cf.join('-', [cf.stackName, 'api'])
+                }],
+                ExecutionRoleArn: cf.getAtt('ExecRole', 'Arn'),
+                TaskRoleArn: cf.getAtt('TaskRole', 'Arn'),
+                Volumes: [{
+                    Name: cf.join([cf.stackName, '-media']),
+                    EFSVolumeConfiguration: {
+                        FilesystemId: cf.ref('EFS'),
+                        TransitEncryption: 'ENABLED',
+                        AuthorizationConfig: {
+                            AccessPointId: cf.ref('EFSAccessPointMedia')
+                        },
+                        RootDirectory: '/'
+                    }
+                }],
+                ContainerDefinitions: [{
+                    Name: 'AuthentikWorkerContainer',
+                    Command: [ 'worker' ],
+                    HealthCheck: { 
+                        Command: [
+                            'CMD', 
+                            'ak', 
+                            'healthcheck'
+                        ],
+                        Interval: 30,
+                        Retries: 3,
+                        StartPeriod: 60,
+                        Timeout: 30
+                    },
+                    Image: 'ghcr.io/goauthentik/server:2025.2.4',
+                    MountPoints: [{
+                        ContainerPath: '/media',
+                        SourceVolume: cf.join([cf.stackName, '-media'])
+                    }],
+                    PortMappings: [{
+                        ContainerPort: 9000
+                    }],
+                    Environment: [
+                        { Name: 'StackName',                    Value: cf.stackName },
+                        { Name: 'AWS_DEFAULT_REGION',           Value: cf.region },
+                        { Name: 'AUTHENTIK_POSTGRESQL__HOST',   Value: cf.getAtt('DBCluster', 'Endpoint.Address') },
+                        { Name: 'AUTHENTIK_POSTGRESQL__USER',   Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/rds/secret:SecretString:username:AWSCURRENT}}') },
+                        { Name: 'AUTHENTIK_REDIS__HOST',        Value: cf.getAtt('AuthentikRedis', 'PrimaryEndPoint.Address') },
+                        { Name: 'AUTHENTIK_BOOTSTRAP_PASSWORD', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/authentik-admin-user-password:SecretString:password:AWSCURRENT}}') },
+                        { Name: 'AUTHENTIK_BOOTSTRAP_TOKEN',    Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/authentik-admin-token:::AWSCURRENT}}') },
+                        { Name: 'AUTHENTIK_BOOTSTRAP_EMAIL',    Value: cf.ref('AuthentikAdminUserEmail') }
+                    ],
+                    Secrets: [
+                        { Name: 'AUTHENTIK_POSTGRESQL__PASSWORD',   ValueFrom: cf.join([cf.ref('DBMasterSecret'), ':password::']) },
+                        { Name: 'AUTHENTIK_SECRET_KEY',             ValueFrom: cf.ref('AuthentikSecretKey') }
+                    ],
+                    LogConfiguration: {
+                        LogDriver: 'awslogs',
+                        Options: {
+                            'awslogs-group': cf.stackName,
+                            'awslogs-region': cf.region,
+                            'awslogs-stream-prefix': cf.stackName,
+                            'awslogs-create-group': true
+                        }
+                    },
+                    RestartPolicy: { 
+                        Enabled: true
+                    }, 
+                    Essential: true
+                }]
+            }
+        },
+        ServerService: {
             Type: 'AWS::ECS::Service',
             Properties: {
-                ServiceName: cf.join('-', [cf.stackName, 'Service']),
+                ServiceName: cf.join('-', [cf.stackName, 'Server']),
                 Cluster: cf.join(['coe-ecs-', cf.ref('Environment')]),
+                DeploymentConfiguration: {
+                    Alarms: {
+                        AlarmNames: [],
+                        Enable: false,
+                        Rollback: false
+                    },
+                    MaximumPercent: 200,
+                    MinimumHealthyPercent: 50
+                },
                 EnableExecuteCommand: cf.ref('EnableExecute'),
-                TaskDefinition: cf.ref('TaskDefinition'),
+                TaskDefinition: cf.ref('ServerTaskDefinition'),
                 LaunchType: 'FARGATE',
                 HealthCheckGracePeriodSeconds: 300,
-                DesiredCount: 1,
+                DesiredCount: 2,
                 NetworkConfiguration: {
                     AwsvpcConfiguration: {
-                        AssignPublicIp: 'ENABLED',
+                        AssignPublicIp: 'DISABLED',
                         SecurityGroups: [cf.ref('ServiceSecurityGroup')],
                         Subnets:  [
-                            cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-public-a'])),
-                            cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-public-b']))
+                            cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-private-a'])),
+                            cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-private-b']))
                         ]
                     }
                 },
                 LoadBalancers: [{
-                    ContainerName: 'api',
-                    ContainerPort: 389,
+                    ContainerName: 'AuthentikServerContainer',
+                    ContainerPort: 9000,
                     TargetGroupArn: cf.ref('TargetGroup')
                 }]
+            }
+        },
+        WorkerService: {
+            Type: 'AWS::ECS::Service',
+            Properties: {
+                ServiceName: cf.join('-', [cf.stackName, 'Worker']),
+                Cluster: cf.join(['coe-ecs-', cf.ref('Environment')]),
+                DeploymentConfiguration: {
+                    Alarms: {
+                        AlarmNames: [],
+                        Enable: false,
+                        Rollback: false
+                    },
+                    MaximumPercent: 200,
+                    MinimumHealthyPercent: 50
+                },
+                EnableExecuteCommand: cf.ref('EnableExecute'),
+                TaskDefinition: cf.ref('WorkerTaskDefinition'),
+                LaunchType: 'FARGATE',
+                HealthCheckGracePeriodSeconds: 300,
+                DesiredCount: 2,
+                NetworkConfiguration: {
+                    AwsvpcConfiguration: {
+                        AssignPublicIp: 'DISABLED',
+                        SecurityGroups: [cf.ref('ServiceSecurityGroup')],
+                        Subnets:  [
+                            cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-private-a'])),
+                            cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-private-b']))
+                        ]
+                    }
+                }
             }
         },
         ServiceSecurityGroup: {
@@ -315,34 +522,35 @@ export default {
                 GroupDescription: cf.join('-', [cf.stackName, 'ecs-sg']),
                 VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc'])),
                 SecurityGroupIngress: [{
-                    Description: 'ELB Traffic',
-                    SourceSecurityGroupId: cf.ref('ELBSecurityGroup'),
+                    Description: 'ALB Traffic',
+                    SourceSecurityGroupId: cf.ref('ALBSecurityGroup'),
                     IpProtocol: 'tcp',
-                    FromPort: 389,
-                    ToPort: 389
+                    FromPort: 9000,
+                    ToPort: 9000
                 }]
             }
         }
     },
     Outputs: {
         API: {
-            Description: 'API ELB',
-            Value: cf.join(['http://', cf.getAtt('ELB', 'DNSName')])
+            Description: 'API ALB',
+            Export: {
+                Name: cf.join([cf.stackName, '-api-endpoint'])
+            },
+            Value: cf.join(['https://', cf.getAtt('ALB', 'DNSName')])
         },
-        LDAPAdminUsername: {
-            Description: 'LDAP Admin Username',
-            Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:username:AWSCURRENT}}')
-        },
-        LDAPAdminPassword: {
-            Description: 'LDAP Admin Password',
-            Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:password:AWSCURRENT}}')
-        },
-        LDAPSVCUsername: {
-            Description: 'LDAP SVC Username',
+        LDAPServiceUsername: {
+            Description: 'LDAP Service Username',
+            Export: {
+                Name: cf.join([cf.stackName, '-ldap-svc-username'])
+            },
             Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/svc:SecretString:username:AWSCURRENT}}')
         },
-        LDAPSVCPassword: {
-            Description: 'LDAP SVC Password',
+        LDAPServicePassword: {
+            Description: 'LDAP Service Password',
+            Export: {
+                Name: cf.join([cf.stackName, '-ldap-svc-password'])
+            },
             Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/svc:SecretString:password:AWSCURRENT}}')
         }
     }
