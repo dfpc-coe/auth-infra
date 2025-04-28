@@ -15,6 +15,12 @@ export default {
         AuthentikAdminUserEmail: {
             Description: 'E-Mail address of the Authentik akadmin user',
             Type: 'String'
+        },
+        AuthentikConfigFile: {
+            Description: 'Use authentik-config.env config file in S3 bucket',
+            Type: 'String',
+            AllowedValues: ['true', 'false'],
+            Default: false
         }
     },
     Resources: {
@@ -263,6 +269,7 @@ export default {
                             ],
                             Resource: [
                                 cf.getAtt('KMS', 'Arn'),
+                                cf.join(['arn:', cf.partition, ':kms:', cf.region, ':', cf.accountId, ':alias:/coe-auth-config-s3-', cf.ref('Environment')])
                             ]
                         },{
                             Effect: 'Allow',
@@ -274,6 +281,15 @@ export default {
                             Resource: [
                                 cf.join(['arn:', cf.partition, ':secretsmanager:', cf.region, ':', cf.accountId, ':secret:', cf.stackName, '/*'])
                             ]
+                        },{
+                            Effect: 'Allow',
+                            Action: [
+                                's3:GetObject',
+                                's3:GetBucketLocation'
+                            ],
+                            Resource: [
+                                cf.join(['arn:', cf.partition, ':s3:::coe-auth-config-s3-', cf.ref('Environment'), '-', cf.region, '-env-config/*'])
+                            ] 
                         }]
                     }
                 }],
@@ -348,9 +364,9 @@ export default {
                         { Name: 'AUTHENTIK_POSTGRESQL__PASSWORD',   ValueFrom: cf.join([cf.ref('DBMasterSecret'), ':password::']) },
                         { Name: 'AUTHENTIK_SECRET_KEY',             ValueFrom: cf.ref('AuthentikSecretKey') }
                     ],
-                    //EnvironmentFiles: [
-                    //    { Value: ' ', Type: 's3' }
-                    //],
+                    EnvironmentFiles: [
+                        cf.if('S3ConfigValueSet', cf.join(['{ Value: "arn:', cf.partition, ':s3:::coe-auth-config-s3-', cf.ref('Environment'), '-', cf.region, '-env-config/authentik-config.env", Type: "s3" }']), cf.ref('AWS::NoValue'))
+                    ],
                     LogConfiguration: {
                         LogDriver: 'awslogs',
                         Options: {
@@ -435,9 +451,9 @@ export default {
                         { Name: 'AUTHENTIK_POSTGRESQL__PASSWORD',   ValueFrom: cf.join([cf.ref('DBMasterSecret'), ':password::']) },
                         { Name: 'AUTHENTIK_SECRET_KEY',             ValueFrom: cf.ref('AuthentikSecretKey') }
                     ],
-                    //EnvironmentFiles: [
-                    //    { Value: ' ', Type: 's3' }
-                    //],
+                    EnvironmentFiles: [
+                        cf.if('S3ConfigValueSet', cf.join(['{ Value: "arn:', cf.partition, ':s3:::coe-auth-config-s3-', cf.ref('Environment'), '-', cf.region, '-env-config/authentik-config.env", Type: "s3" }']), cf.ref('AWS::NoValue'))
+                    ],
                     LogConfiguration: {
                         LogDriver: 'awslogs',
                         Options: {
@@ -540,6 +556,9 @@ export default {
                 }]
             }
         }
+    },
+    Conditions: {
+        S3ConfigValueSet: cf.not(cf.equals(cf.ref('AuthentikConfigFile'), true))
     },
     Outputs: {
         API: {
