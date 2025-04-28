@@ -6,7 +6,7 @@ export default {
             Type: 'AWS::ElastiCache::ReplicationGroup',
             Properties: {
                 AutomaticFailoverEnabled: true,
-                CacheNodeType: 'cache.t4g.medium',
+                CacheNodeType: 'cache.t4g.micro',
                 CacheSubnetGroupName: cf.ref('AuthentikRedisSubnetGroup'),
                 Engine: 'redis',
                 EngineVersion: '7.1',

@@ -336,16 +336,21 @@ export default {
                         ContainerPort: 9000
                     }],
                     Environment: [
-                        { Name: 'StackName',                    Value: cf.stackName },
-                        { Name: 'AWS_DEFAULT_REGION',           Value: cf.region },
-                        { Name: 'AUTHENTIK_POSTGRESQL__HOST',   Value: cf.getAtt('DBCluster', 'Endpoint.Address') },
-                        { Name: 'AUTHENTIK_POSTGRESQL__USER',   Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/rds/secret:SecretString:username:AWSCURRENT}}') },
-                        { Name: 'AUTHENTIK_REDIS__HOST',        Value: cf.getAtt('AuthentikRedis', 'PrimaryEndPoint.Address') }
+                        { Name: 'StackName',                                    Value: cf.stackName },
+                        { Name: 'AWS_DEFAULT_REGION',                           Value: cf.region },
+                        { Name: 'AUTHENTIK_POSTGRESQL__HOST',                   Value: cf.getAtt('DBCluster', 'Endpoint.Address') },
+                        { Name: 'AUTHENTIK_POSTGRESQL__USER',                   Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/rds/secret:SecretString:username:AWSCURRENT}}') },
+                        { Name: 'AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__HOST', Value: cf.getAtt('DBCluster', 'ReadEndpoint.Address') },
+                        { Name: 'AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__USER', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/rds/secret:SecretString:username:AWSCURRENT}}') },
+                        { Name: 'AUTHENTIK_REDIS__HOST',                        Value: cf.getAtt('AuthentikRedis', 'PrimaryEndPoint.Address') }
                     ],
                     Secrets: [
                         { Name: 'AUTHENTIK_POSTGRESQL__PASSWORD',   ValueFrom: cf.join([cf.ref('DBMasterSecret'), ':password::']) },
                         { Name: 'AUTHENTIK_SECRET_KEY',             ValueFrom: cf.ref('AuthentikSecretKey') }
                     ],
+                    //EnvironmentFiles: [
+                    //    { Value: ' ', Type: 's3' }
+                    //],
                     LogConfiguration: {
                         LogDriver: 'awslogs',
                         Options: {
@@ -415,19 +420,24 @@ export default {
                         ContainerPort: 9000
                     }],
                     Environment: [
-                        { Name: 'StackName',                    Value: cf.stackName },
-                        { Name: 'AWS_DEFAULT_REGION',           Value: cf.region },
-                        { Name: 'AUTHENTIK_POSTGRESQL__HOST',   Value: cf.getAtt('DBCluster', 'Endpoint.Address') },
-                        { Name: 'AUTHENTIK_POSTGRESQL__USER',   Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/rds/secret:SecretString:username:AWSCURRENT}}') },
-                        { Name: 'AUTHENTIK_REDIS__HOST',        Value: cf.getAtt('AuthentikRedis', 'PrimaryEndPoint.Address') },
-                        { Name: 'AUTHENTIK_BOOTSTRAP_PASSWORD', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/authentik-admin-user-password:SecretString:password:AWSCURRENT}}') },
-                        { Name: 'AUTHENTIK_BOOTSTRAP_TOKEN',    Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/authentik-admin-token:::AWSCURRENT}}') },
-                        { Name: 'AUTHENTIK_BOOTSTRAP_EMAIL',    Value: cf.ref('AuthentikAdminUserEmail') }
+                        { Name: 'StackName',                                    Value: cf.stackName },
+                        { Name: 'AWS_DEFAULT_REGION',                           Value: cf.region },
+                        { Name: 'AUTHENTIK_POSTGRESQL__HOST',                   Value: cf.getAtt('DBCluster', 'Endpoint.Address') },
+                        { Name: 'AUTHENTIK_POSTGRESQL__USER',                   Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/rds/secret:SecretString:username:AWSCURRENT}}') },
+                        { Name: 'AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__HOST', Value: cf.getAtt('DBCluster', 'ReadEndpoint.Address') },
+                        { Name: 'AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__USER', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/rds/secret:SecretString:username:AWSCURRENT}}') },
+                        { Name: 'AUTHENTIK_REDIS__HOST',                        Value: cf.getAtt('AuthentikRedis', 'PrimaryEndPoint.Address') },
+                        { Name: 'AUTHENTIK_BOOTSTRAP_PASSWORD',                 Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/authentik-admin-user-password:SecretString:password:AWSCURRENT}}') },
+                        { Name: 'AUTHENTIK_BOOTSTRAP_TOKEN',                    Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/authentik-admin-token:::AWSCURRENT}}') },
+                        { Name: 'AUTHENTIK_BOOTSTRAP_EMAIL',                    Value: cf.ref('AuthentikAdminUserEmail') }
                     ],
                     Secrets: [
                         { Name: 'AUTHENTIK_POSTGRESQL__PASSWORD',   ValueFrom: cf.join([cf.ref('DBMasterSecret'), ':password::']) },
                         { Name: 'AUTHENTIK_SECRET_KEY',             ValueFrom: cf.ref('AuthentikSecretKey') }
                     ],
+                    //EnvironmentFiles: [
+                    //    { Value: ' ', Type: 's3' }
+                    //],
                     LogConfiguration: {
                         LogDriver: 'awslogs',
                         Options: {
