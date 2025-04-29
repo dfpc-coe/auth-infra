@@ -69,8 +69,18 @@ export default cf.merge({
         }
     },
     Outputs: {
+        KMS: {
+            Description: 'KMS',
+            Export: {
+                Name: cf.join([cf.stackName, '-kms'])
+            },
+            Value: cf.getAtt('KMS', 'Arn')
+        },
         ConfigBucket: {
             Description: 'Bucket ARN',
+            Export: {
+                Name: cf.join([cf.stackName, '-s3'])
+            },
             Value: cf.getAtt('ConfigBucket', 'Arn')
         }
     }

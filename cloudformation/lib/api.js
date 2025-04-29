@@ -221,6 +221,7 @@ export default {
                             ],
                             Resource: [
                                 cf.getAtt('KMS', 'Arn'),
+                                cf.importValue(cf.join(['coe-auth-config-s3-', cf.ref('Environment'), '-kms']))
                             ]
                         },{
                             Effect: 'Allow',
@@ -229,7 +230,8 @@ export default {
                                 'secretsmanager:GetSecretValue'
                             ],
                             Resource: [
-                                cf.join(['arn:', cf.partition, ':secretsmanager:', cf.region, ':', cf.accountId, ':secret:', cf.stackName, '/*'])
+                                //cf.join(['arn:', cf.partition, ':secretsmanager:', cf.region, ':', cf.accountId, ':secret:', cf.stackName, '/*'])
+                                cf.join([cf.importValue(cf.join(['coe-auth-config-s3-', cf.ref('Environment'), '-s3'])), '/*'])
                             ]
                         }]
                     }
@@ -269,7 +271,7 @@ export default {
                             ],
                             Resource: [
                                 cf.getAtt('KMS', 'Arn'),
-                                cf.join(['arn:', cf.partition, ':kms:', cf.region, ':', cf.accountId, ':alias:/coe-auth-config-s3-', cf.ref('Environment')])
+                                cf.importValue(cf.join(['coe-auth-config-s3-', cf.ref('Environment'), '-kms']))
                             ]
                         },{
                             Effect: 'Allow',
@@ -288,7 +290,8 @@ export default {
                                 's3:GetBucketLocation'
                             ],
                             Resource: [
-                                cf.join(['arn:', cf.partition, ':s3:::coe-auth-config-s3-', cf.ref('Environment'), '-', cf.region, '-env-config/*'])
+                                //cf.join(['arn:', cf.partition, ':s3:::coe-auth-config-s3-', cf.ref('Environment'), '-', cf.region, '-env-config/*'])
+                                cf.join([cf.importValue(cf.join(['coe-auth-config-s3-', cf.ref('Environment'), '-s3'])), '/*'])
                             ] 
                         }]
                     }
@@ -365,7 +368,14 @@ export default {
                         { Name: 'AUTHENTIK_SECRET_KEY',             ValueFrom: cf.ref('AuthentikSecretKey') }
                     ],
                     EnvironmentFiles: [
-                        cf.if('S3ConfigValueSet', cf.join(['{ Value: "arn:', cf.partition, ':s3:::coe-auth-config-s3-', cf.ref('Environment'), '-', cf.region, '-env-config/authentik-config.env", Type: "s3" }']), cf.ref('AWS::NoValue'))
+                        cf.if('S3ConfigValueSet', 
+                            {
+                                //Value: cf.join(['arn:', cf.partition, ':s3:::coe-auth-config-s3-', cf.ref('Environment'), '-', cf.region, '-env-config/authentik-config.env']),
+                                Value: cf.join([cf.join([cf.importValue(cf.join(['coe-auth-config-s3-', cf.ref('Environment'), '-s3'])), '/authentik-config.env'])]),
+                                Type: 's3' 
+                            },
+                            cf.ref('AWS::NoValue')
+                        )
                     ],
                     LogConfiguration: {
                         LogDriver: 'awslogs',
@@ -452,8 +462,14 @@ export default {
                         { Name: 'AUTHENTIK_SECRET_KEY',             ValueFrom: cf.ref('AuthentikSecretKey') }
                     ],
                     EnvironmentFiles: [
-                        cf.if('S3ConfigValueSet', cf.join(['{ Value: "arn:', cf.partition, ':s3:::coe-auth-config-s3-', cf.ref('Environment'), '-', cf.region, '-env-config/authentik-config.env", Type: "s3" }']), cf.ref('AWS::NoValue'))
-                    ],
+                        cf.if('S3ConfigValueSet', 
+                            {
+                                //Value: cf.join(['arn:', cf.partition, ':s3:::coe-auth-config-s3-', cf.ref('Environment'), '-', cf.region, '-env-config/authentik-config.env']),
+                                Value: cf.join([cf.join([cf.importValue(cf.join(['coe-auth-config-s3-', cf.ref('Environment'), '-s3'])), '/authentik-config.env'])]),
+                                Type: 's3' 
+                            },
+                            cf.ref('AWS::NoValue')
+                        )                    ],
                     LogConfiguration: {
                         LogDriver: 'awslogs',
                         Options: {
@@ -558,7 +574,7 @@ export default {
         }
     },
     Conditions: {
-        S3ConfigValueSet: cf.not(cf.equals(cf.ref('AuthentikConfigFile'), true))
+        S3ConfigValueSet: cf.equals(cf.ref('AuthentikConfigFile'), true)
     },
     Outputs: {
         API: {
