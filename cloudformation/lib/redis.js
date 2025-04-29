@@ -5,12 +5,15 @@ export default {
         AuthentikRedis: {
             Type: 'AWS::ElastiCache::ReplicationGroup',
             Properties: {
-                AutomaticFailoverEnabled: true,
+                AutomaticFailoverEnabled: cf.if('CreateProdResources', true, false),
+                AtRestEncryptionEnabled: true,
+                KmsKeyId: cf.ref('KMS'),
                 CacheNodeType: 'cache.t4g.micro',
                 CacheSubnetGroupName: cf.ref('AuthentikRedisSubnetGroup'),
                 Engine: 'redis',
                 EngineVersion: '7.1',
-                NumCacheClusters: '2',
+                NumCacheClusters: cf.if('CreateProdResources', 2, 1),
+                PreferredMaintenanceWindow: 'Sun:22:30-Sun:23:30',
                 ReplicationGroupDescription: "Redis cluster for authentik",
                 SecurityGroupIds: [
                     cf.ref('AuthentikRedisSecurityGroup')
@@ -45,5 +48,8 @@ export default {
                 VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc']))
             }
         }
+    },
+    Conditions: {
+        CreateProdResources: cf.equals(cf.ref('EnvType'), 'prod')
     }
 };

@@ -5,15 +5,18 @@ export default {
         EFS: {
             Type: 'AWS::EFS::FileSystem',
             Properties: {
+                FileSystemTags: [{
+                    Key: 'Name',
+                    Value: cf.stackName
+                }],
+                Encrypted: true,
+                KmsKeyId: cf.ref('KMS'),
+                PerformanceMode: 'generalPurpose',
+                ThroughputMode: 'bursting',
                 BackupPolicy: {
                     Status: 'DISABLED'
                 },
-                Encrypted: true,
-                PerformanceMode: 'generalPurpose',
-                ThroughputMode: 'bursting'
-            },
-            UpdateReplacePolicy: "Retain",
-            DeletionPolicy: "Retain"
+            }
         },
         EFSMountTargetSecurityGroup: {
             Type: 'AWS::EC2::SecurityGroup',

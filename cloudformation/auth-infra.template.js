@@ -23,6 +23,12 @@ export default cf.merge(
                 Description: 'VPC/ECS Stack to deploy into',
                 Type: 'String',
                 Default: 'prod'
+            },
+            EnvType: {
+                Description: 'Environment type',
+                Type: 'String',
+                AllowedValues: ['prod', 'dev-test'],
+                Default: 'prod'
             }
         }
     },

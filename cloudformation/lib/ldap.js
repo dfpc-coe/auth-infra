@@ -8,8 +8,8 @@ export default {
             AllowedValues: ['true', 'false'],
             Default: false
         },
-        SSLCertificateIdentifier: {
-            Description: 'ACM SSL Certificate for HTTP Protocol',
+        SSLCertificateARN: {
+            Description: 'ACM SSL certificate ARN for LDAPS protocol',
             Type: 'String'
         },
         AuthentikHost: {
@@ -42,12 +42,12 @@ export default {
                 GroupName: cf.join('-', [cf.stackName, 'nlb-sg']),
                 GroupDescription: 'Allow 389 and 636 Access to NLB',
                 SecurityGroupIngress: [{
-                    CidrIp: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc-cidr'])),
+                    CidrIp: '10.0.0.0/8',
                     IpProtocol: 'tcp',
                     FromPort: 389,
                     ToPort: 389
                 },{
-                    CidrIp: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc-cidr'])),
+                    CidrIp: '10.0.0.0/8',
                     IpProtocol: 'tcp',
                     FromPort: 80,
                     ToPort: 80
@@ -71,7 +71,7 @@ export default {
             Type: 'AWS::ElasticLoadBalancingV2::Listener',
             Properties: {
                 Certificates: [{
-                    CertificateArn: cf.join(['arn:', cf.partition, ':acm:', cf.region, ':', cf.accountId, ':certificate/', cf.ref('SSLCertificateIdentifier')])
+                    CertificateArn: cf.ref('SSLCertificateARN')
                 }],
                 DefaultActions: [{
                     Type: 'forward',
@@ -193,8 +193,8 @@ export default {
             Type: 'AWS::ECS::TaskDefinition',
             Properties: {
                 Family: cf.stackName,
-                Cpu: 256,
-                Memory: 512,
+                Cpu: cf.if('CreateProdResources', 512, 256),
+                Memory: cf.if('CreateProdResources', 1024, 512),
                 NetworkMode: 'awsvpc',
                 RequiresCompatibilities: ['FARGATE'],
                 Tags: [{
@@ -249,7 +249,7 @@ export default {
                 TaskDefinition: cf.ref('OutpostTaskDefinition'),
                 LaunchType: 'FARGATE',
                 HealthCheckGracePeriodSeconds: 300,
-                DesiredCount: 2,
+                DesiredCount: cf.if('CreateProdResources', 2, 1)
                 NetworkConfiguration: {
                     AwsvpcConfiguration: {
                         AssignPublicIp: 'DISABLED',
@@ -297,14 +297,16 @@ export default {
             }
         }
     },
+    Conditions: {
+        CreateProdResources: cf.equals(cf.ref('EnvType'), 'prod')
+    },
     Outputs: {
         LDAP: {
-            Description: 'LDAP endpoint',
-            Value: cf.join(['ldap://', cf.getAtt('NLB', 'DNSName')])
-        },
-        LDAPS: {
-            Description: 'LDAPS endpoint',
-            Value: cf.join(['ldaps://', cf.getAtt('NLB', 'DNSName')])
+            Description: 'LDAP(S) endpoint for CNAME target',
+            Export: {
+                Name: cf.join([cf.stackName, '-ldap'])
+            },
+            Value: cf.getAtt('NLB', 'DNSName')
         }
     }
 };

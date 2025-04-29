@@ -2,33 +2,17 @@ import cf from '@openaddresses/cloudfriend';
 
 export default {
     Parameters: {
-        DatabaseType: {
-            Type: 'String',
-            Default: 'db.serverless',
-            Description: 'Database size to create',
-            AllowedValues: [
-                'db.t3.medium',
-                'db.r6g.large',
-                'db.serverless'
-            ]
-        },
         DatabaseVersion: {
-            Description: 'PostgreSQL database engine version',
+            Description: 'Aurora PostgreSQL database engine version',
             Type: 'String',
             Default: '16.6'
-        },
-        DatabaseMultiAZ: {
-            Description: 'PostgreSQL database as a Multi-AZ deployment',
-            Type: 'String',
-            AllowedValues: ['true', 'false'],
-            Default: 'false'
         }
     },
     Resources: {
         DBMasterSecret: {
             Type: 'AWS::SecretsManager::Secret',
             Properties: {
-                Description: cf.join([cf.stackName, ' RDS Master Password']),
+                Description: cf.join([cf.stackName, ' Aurora PostgreSQL Master Password']),
                 GenerateSecretString: {
                     SecretStringTemplate: '{"username": "authentik"}',
                     GenerateStringKey: 'password',
@@ -77,7 +61,7 @@ export default {
                 Port: '5432',
                 ServerlessV2ScalingConfiguration: {
                     MinCapacity: '0',
-                    MaxCapacity: '8',
+                    MaxCapacity: '4',
                 },
                 DatabaseName: 'authentik',
                 CopyTagsToSnapshot: true,
@@ -92,7 +76,7 @@ export default {
                 StorageType: 'aurora',
                 VpcSecurityGroupIds: [cf.ref('DBVPCSecurityGroup')],
                 DBSubnetGroupName: cf.ref('DBSubnet'),
-                DeletionProtection: false                
+                DeletionProtection: cf.if('CreateProdResources', true, false)                
             }
         },
         DBFirstInstance: {
@@ -109,12 +93,12 @@ export default {
                 EnablePerformanceInsights: 'true',
                 PerformanceInsightsKMSKeyId: cf.ref('KMS'),
                 PerformanceInsightsRetentionPeriod: 7,
-                DBInstanceClass: cf.ref('DatabaseType')
+                DBInstanceClass: cf.if('CreateProdResources', 'db.t4g.large', 'db.serverless')
             }
         },
         DBSecondInstance: {
             Type: 'AWS::RDS::DBInstance',
-            Condition: 'DeployDatabaseMultiAZ',
+            Condition: 'CreateProdResources',
             DependsOn: ['DBMasterSecret'],
             Properties: {
                 DBClusterIdentifier: cf.ref('DBCluster'),
@@ -127,7 +111,7 @@ export default {
                 EnablePerformanceInsights: 'true',
                 PerformanceInsightsKMSKeyId: cf.ref('KMS'),
                 PerformanceInsightsRetentionPeriod: 7,
-                DBInstanceClass: cf.ref('DatabaseType')
+                DBInstanceClass: 'db.t4g.large'
             }
         },        
         DBSubnet: {
@@ -160,11 +144,11 @@ export default {
         }
     },
     Conditions: {
-        DeployDatabaseMultiAZ: cf.equals(cf.ref('DatabaseMultiAZ'), true)
+        CreateProdResources: cf.equals(cf.ref('EnvType'), 'prod')
     },
     Outputs: {
         DBEndpoint: {
-            Description: 'RDS Database Endpoint',
+            Description: 'Aurora PostgreSQL Database Endpoint',
             Export: {
                 Name: cf.join([cf.stackName, '-db-endpoint'])
             },

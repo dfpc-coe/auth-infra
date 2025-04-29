@@ -8,12 +8,12 @@ export default {
             AllowedValues: ['true', 'false'],
             Default: false
         },
-        SSLCertificateIdentifier: {
-            Description: 'ACM SSL Certificate for HTTP Protocol',
+        SSLCertificateARN: {
+            Description: 'ACM SSL Certificate ARN for HTTPS Protocol',
             Type: 'String'
         },
         AuthentikAdminUserEmail: {
-            Description: 'E-Mail address of the Authentik akadmin user',
+            Description: 'E-Mail address for the Authentik akadmin user',
             Type: 'String'
         },
         AuthentikConfigFile: {
@@ -148,7 +148,7 @@ export default {
             Type: 'AWS::ElasticLoadBalancingV2::Listener',
             Properties: {
                 Certificates: [{
-                    CertificateArn: cf.join(['arn:', cf.partition, ':acm:', cf.region, ':', cf.accountId, ':certificate/', cf.ref('SSLCertificateIdentifier')])
+                    CertificateArn: cf.ref('SSLCertificateARN')
                 }],
                 DefaultActions: [{
                     Type: 'forward',
@@ -230,7 +230,6 @@ export default {
                                 'secretsmanager:GetSecretValue'
                             ],
                             Resource: [
-                                //cf.join(['arn:', cf.partition, ':secretsmanager:', cf.region, ':', cf.accountId, ':secret:', cf.stackName, '/*'])
                                 cf.join([cf.importValue(cf.join(['coe-auth-config-s3-', cf.ref('Environment'), '-s3'])), '/*'])
                             ]
                         }]
@@ -276,9 +275,8 @@ export default {
                         },{
                             Effect: 'Allow',
                             Action: [
-                                'secretsmanager:Describe*',
-                                'secretsmanager:Get*',
-                                'secretsmanager:List*'
+                                'secretsmanager:DescribeSecret',
+                                'secretsmanager:GetSecretValue'
                             ],
                             Resource: [
                                 cf.join(['arn:', cf.partition, ':secretsmanager:', cf.region, ':', cf.accountId, ':secret:', cf.stackName, '/*'])
@@ -290,7 +288,6 @@ export default {
                                 's3:GetBucketLocation'
                             ],
                             Resource: [
-                                //cf.join(['arn:', cf.partition, ':s3:::coe-auth-config-s3-', cf.ref('Environment'), '-', cf.region, '-env-config/*'])
                                 cf.join([cf.importValue(cf.join(['coe-auth-config-s3-', cf.ref('Environment'), '-s3'])), '/*'])
                             ] 
                         }]
@@ -504,7 +501,7 @@ export default {
                 TaskDefinition: cf.ref('ServerTaskDefinition'),
                 LaunchType: 'FARGATE',
                 HealthCheckGracePeriodSeconds: 300,
-                DesiredCount: 2,
+                DesiredCount: cf.if('CreateProdResources', 2, 1),
                 NetworkConfiguration: {
                     AwsvpcConfiguration: {
                         AssignPublicIp: 'DISABLED',
@@ -540,7 +537,7 @@ export default {
                 TaskDefinition: cf.ref('WorkerTaskDefinition'),
                 LaunchType: 'FARGATE',
                 HealthCheckGracePeriodSeconds: 300,
-                DesiredCount: 2,
+                DesiredCount: cf.if('CreateProdResources', 2, 1),
                 NetworkConfiguration: {
                     AwsvpcConfiguration: {
                         AssignPublicIp: 'DISABLED',
@@ -574,15 +571,16 @@ export default {
         }
     },
     Conditions: {
+        CreateProdResources: cf.equals(cf.ref('EnvType'), 'prod'),
         S3ConfigValueSet: cf.equals(cf.ref('AuthentikConfigFile'), true)
     },
     Outputs: {
         API: {
-            Description: 'API ALB',
+            Description: 'HTTP(S) ALB endpoint for CNAME',
             Export: {
                 Name: cf.join([cf.stackName, '-api-endpoint'])
             },
-            Value: cf.join(['https://', cf.getAtt('ALB', 'DNSName')])
+            Value: cf.getAtt('ALB', 'DNSName')
         },
         LDAPServiceUsername: {
             Description: 'LDAP Service Username',
