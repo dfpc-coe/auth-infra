@@ -11,8 +11,7 @@
         "Client"
     ],
     "artifacts": {
-        "docker": [
-            "coe-ecr-auth:{{gitsha}}"
+        "docker": [            
         ]
     }
 }

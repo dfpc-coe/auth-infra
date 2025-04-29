@@ -6,7 +6,6 @@
     "description": "Infrastructure to support LDAP based auth in TAK",
     "scripts": {
         "lint": "eslint *.js cloudformation/",
-        "build": "node build.js",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "engines": {
