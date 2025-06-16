@@ -36,7 +36,7 @@ sed -i "s|CUSTOM_ORG|${ORG}|" "/container/modify.ldif"
 sed -i "s|CUSTOM_TLD|${TLD}|" "/container/modify.ldif"
 sed -i "s|CUSTOM_SERVICE_PASSWORD|${SERVICE_PASSWORD}|" "/container/modify.ldif"
 
-until ldapmodify -D 'cn=admin,dc=cotak,dc=gov' -H ldap://localhost:389 -w "${LDAP_ADMIN_PASSWORD}" -f /container/modify.ldif
+until ldapmodify -D "cn=admin,dc=${ORG},dc=${TLD}" -H ldap://localhost:389 -w "${LDAP_ADMIN_PASSWORD}" -f /container/modify.ldif
 do
     echo "sleeping for 10s"
     sleep 10

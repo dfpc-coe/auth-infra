@@ -293,7 +293,7 @@ export default {
                 TaskDefinition: cf.ref('TaskDefinition'),
                 LaunchType: 'FARGATE',
                 HealthCheckGracePeriodSeconds: 300,
-                DesiredCount: 0,
+                DesiredCount: 1,
                 NetworkConfiguration: {
                     AwsvpcConfiguration: {
                         AssignPublicIp: 'ENABLED',
