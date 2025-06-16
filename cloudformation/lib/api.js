@@ -18,6 +18,11 @@ export default {
             Description: 'ACM SSL Certificate for HTTP Protocol',
             Type: 'String'
         },
+        LDAPLogLevel: {
+            Description: 'See https://www.openldap.org/doc/admin24/slapdconf2.html',
+            Type: 'Number',
+            Default: 0
+        },
         LDAPOrganisation: {
             Description: 'LDAP Org',
             Type: 'String'
@@ -70,8 +75,8 @@ export default {
                 Type: 'network',
                 SecurityGroups: [cf.ref('ELBSecurityGroup')],
                 Subnets:  [
-                    cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-public-a'])),
-                    cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-public-b']))
+                    cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-subnet-public-a'])),
+                    cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-subnet-public-b']))
                 ]
             }
 
@@ -91,7 +96,7 @@ export default {
                     FromPort: 636,
                     ToPort: 636
                 }],
-                VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc']))
+                VpcId: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-vpc']))
             }
         },
         HttpListener: {
@@ -123,7 +128,7 @@ export default {
                 Port: 389,
                 Protocol: 'TCP',
                 TargetType: 'ip',
-                VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc']))
+                VpcId: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-vpc']))
             }
         },
         TaskRole: {
@@ -203,6 +208,7 @@ export default {
             Type: 'AWS::ECS::TaskDefinition',
             DependsOn: [
                 'LDAPMasterSecret',
+                'LDAPSVCSecret',
                 'EFSAccessPointLDAP',
                 'EFSAccessPointSLAPD'
             ],
@@ -258,6 +264,7 @@ export default {
                         { Name: 'AWS_DEFAULT_REGION',   Value: cf.region },
                         { Name: 'LDAP_ORGANISATION',    Value: cf.ref('LDAPOrganisation') },
                         { Name: 'LDAP_DOMAIN',          Value: cf.ref('LDAPDomain') },
+                        { Name: 'LDAP_LOG_LEVEL',       Value: cf.ref('LDAPLogLevel') },
                         { Name: 'LDAP_ADMIN_USERNAME',  Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:username:AWSCURRENT}}') },
                         { Name: 'LDAP_ADMIN_PASSWORD',  Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:password:AWSCURRENT}}') },
                         { Name: 'LDAP_CONFIG_PASSWORD', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/admin:SecretString:password:AWSCURRENT}}') },
@@ -281,19 +288,19 @@ export default {
             Type: 'AWS::ECS::Service',
             Properties: {
                 ServiceName: cf.join('-', [cf.stackName, 'Service']),
-                Cluster: cf.join(['coe-ecs-', cf.ref('Environment')]),
+                Cluster: cf.join(['tak-vpc-', cf.ref('Environment')]),
                 EnableExecuteCommand: cf.ref('EnableExecute'),
                 TaskDefinition: cf.ref('TaskDefinition'),
                 LaunchType: 'FARGATE',
                 HealthCheckGracePeriodSeconds: 300,
-                DesiredCount: 1,
+                DesiredCount: 0,
                 NetworkConfiguration: {
                     AwsvpcConfiguration: {
                         AssignPublicIp: 'ENABLED',
                         SecurityGroups: [cf.ref('ServiceSecurityGroup')],
                         Subnets:  [
-                            cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-public-a'])),
-                            cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-public-b']))
+                            cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-subnet-public-a'])),
+                            cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-subnet-public-b']))
                         ]
                     }
                 },
@@ -313,7 +320,7 @@ export default {
                 }],
                 GroupName: cf.join('-', [cf.stackName, 'ecs-service-sg']),
                 GroupDescription: cf.join('-', [cf.stackName, 'ecs-sg']),
-                VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc'])),
+                VpcId: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-vpc'])),
                 SecurityGroupIngress: [{
                     Description: 'ELB Traffic',
                     SourceSecurityGroupId: cf.ref('ELBSecurityGroup'),
