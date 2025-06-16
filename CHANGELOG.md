@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v2.1.0 - 2025-06-16
+
+- :tada: Add Retention on AWS Secrets
+
 ### v2.0.0 - 2025-06-16
 
 - :tada: Update to VPC 2.0

@@ -42,6 +42,7 @@ export default {
         },
         LDAPMasterSecret: {
             Type: 'AWS::SecretsManager::Secret',
+            DeletionPolicy: 'Retain',
             Properties: {
                 Description: cf.join([cf.stackName, ' LDAP Master Password']),
                 GenerateSecretString: {
@@ -56,6 +57,7 @@ export default {
         },
         LDAPSVCSecret: {
             Type: 'AWS::SecretsManager::Secret',
+            DeletionPolicy: 'Retain',
             Properties: {
                 Description: cf.join([cf.stackName, ' LDAP SVC Account Password']),
                 GenerateSecretString: {
