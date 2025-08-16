@@ -12,6 +12,14 @@
 
 ### Pending Release
 
+### v2.1.0 - 2025-06-16
+
+- :tada: Add Retention on AWS Secrets
+
+### v2.0.0 - 2025-06-16
+
+- :tada: Update to VPC 2.0
+
 ### v1.4.0 - 2025-03-10
 
 - :tada: Add build script for folks building outside the context of GH Actions
