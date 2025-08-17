@@ -21,9 +21,28 @@ export default {
             Type: 'String',
             AllowedValues: ['true', 'false'],
             Default: false
+        },
+        SubdomainPrefix: {
+            Description: 'Subdomain prefix for Authentik, e.g. "authentik"',
+            Type: 'String',
+            Default: 'authentik',
         }
     },
     Resources: {
+        ALBDNS: {
+            Type: 'AWS::Route53::RecordSet',
+            Properties: {
+                HostedZoneId: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-id'])),
+                Type : 'A',
+                Name: cf.join([cf.ref('SubdomainPrefix'), '.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]),
+                Comment: cf.join(' ', [cf.stackName, 'DNS Entry']),
+                AliasTarget: {
+                    DNSName: cf.getAtt('ALB', 'DNSName'),
+                    EvaluateTargetHealth: true,
+                    HostedZoneId: cf.getAtt('ALB', 'CanonicalHostedZoneID')
+                }
+            }
+        },
         Logs: {
             Type: 'AWS::Logs::LogGroup',
             Properties: {
@@ -158,7 +177,7 @@ export default {
                 Port: 443,
                 Protocol: "HTTPS"
             }
-        },    
+        },
         TargetGroup: {
             Type: 'AWS::ElasticLoadBalancingV2::TargetGroup',
             DependsOn: 'ALB',
@@ -289,7 +308,7 @@ export default {
                             ],
                             Resource: [
                                 cf.join([cf.importValue(cf.join(['tak-authentik-config-s3-', cf.ref('Environment'), '-s3'])), '/*'])
-                            ] 
+                            ]
                         }]
                     }
                 }],
@@ -332,10 +351,10 @@ export default {
                 ContainerDefinitions: [{
                     Name: 'AuthentikServerContainer',
                     Command: [ 'server' ],
-                    HealthCheck: { 
+                    HealthCheck: {
                         Command: [
-                            'CMD', 
-                            'ak', 
+                            'CMD',
+                            'ak',
                             'healthcheck'
                         ],
                         Interval: 30,
@@ -365,10 +384,10 @@ export default {
                         { Name: 'AUTHENTIK_SECRET_KEY',             ValueFrom: cf.ref('AuthentikSecretKey') }
                     ],
                     EnvironmentFiles: [
-                        cf.if('S3ConfigValueSet', 
+                        cf.if('S3ConfigValueSet',
                             {
                                 Value: cf.join([cf.join([cf.importValue(cf.join(['tak-authentik-config-s3-', cf.ref('Environment'), '-s3'])), '/authentik-config.env'])]),
-                                Type: 's3' 
+                                Type: 's3'
                             },
                             cf.ref('AWS::NoValue')
                         )
@@ -382,9 +401,9 @@ export default {
                             'awslogs-create-group': true
                         }
                     },
-                    RestartPolicy: { 
+                    RestartPolicy: {
                         Enabled: true
-                    }, 
+                    },
                     Essential: true
                 }]
             }
@@ -422,10 +441,10 @@ export default {
                 ContainerDefinitions: [{
                     Name: 'AuthentikWorkerContainer',
                     Command: [ 'worker' ],
-                    HealthCheck: { 
+                    HealthCheck: {
                         Command: [
-                            'CMD', 
-                            'ak', 
+                            'CMD',
+                            'ak',
                             'healthcheck'
                         ],
                         Interval: 30,
@@ -458,10 +477,10 @@ export default {
                         { Name: 'AUTHENTIK_SECRET_KEY',             ValueFrom: cf.ref('AuthentikSecretKey') }
                     ],
                     EnvironmentFiles: [
-                        cf.if('S3ConfigValueSet', 
+                        cf.if('S3ConfigValueSet',
                             {
                                 Value: cf.join([cf.join([cf.importValue(cf.join(['tak-authentik-config-s3-', cf.ref('Environment'), '-s3'])), '/authentik-config.env'])]),
-                                Type: 's3' 
+                                Type: 's3'
                             },
                             cf.ref('AWS::NoValue')
                         )                    ],
@@ -474,9 +493,9 @@ export default {
                             'awslogs-create-group': true
                         }
                     },
-                    RestartPolicy: { 
+                    RestartPolicy: {
                         Enabled: true
-                    }, 
+                    },
                     Essential: true
                 }]
             }
