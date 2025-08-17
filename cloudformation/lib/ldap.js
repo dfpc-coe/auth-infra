@@ -1,22 +1,6 @@
 import cf from '@openaddresses/cloudfriend';
 
 export default {
-    Parameters: {
-        EnableExecute: {
-            Description: 'Allow SSH into docker container - should only be enabled for limited debugging',
-            Type: 'String',
-            AllowedValues: ['true', 'false'],
-            Default: false
-        },
-        SSLCertificateARN: {
-            Description: 'ACM SSL certificate ARN for LDAPS protocol',
-            Type: 'String'
-        },
-        AuthentikHost: {
-            Description: 'URL of the Authentik auth service',
-            Type: 'String'
-        }
-    },
     Resources: {
         NLB: {
             Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer',
@@ -60,7 +44,7 @@ export default {
             Properties: {
                 DefaultActions: [{
                     Type: 'forward',
-                    TargetGroupArn: cf.ref('TargetGroup3389')
+                    TargetGroupArn: cf.ref('OutpostTargetGroup3389')
                 }],
                 LoadBalancerArn: cf.ref('NLB'),
                 Port: 389,
@@ -75,14 +59,14 @@ export default {
                 }],
                 DefaultActions: [{
                     Type: 'forward',
-                    TargetGroupArn: cf.ref('TargetGroup6636')
+                    TargetGroupArn: cf.ref('OutpostTargetGroup6636')
                 }],
                 LoadBalancerArn: cf.ref('NLB'),
                 Port: 636,
                 Protocol: 'TLS'
             }
         },
-        TargetGroup3389: {
+        OutpostTargetGroup3389: {
             Type: 'AWS::ElasticLoadBalancingV2::TargetGroup',
             DependsOn: 'NLB',
             Properties: {
@@ -99,7 +83,7 @@ export default {
                 HealthyThresholdCount: 2
             }
         },
-        TargetGroup6636: {
+        OutpostTargetGroup6636: {
             Type: 'AWS::ElasticLoadBalancingV2::TargetGroup',
             DependsOn: 'NLB',
             Properties: {
@@ -116,7 +100,7 @@ export default {
                 HealthyThresholdCount: 2
             }
         },
-        TaskRole: {
+        OutpostTaskRole: {
             Type: 'AWS::IAM::Role',
             Properties: {
                 AssumeRolePolicyDocument: {
@@ -155,7 +139,7 @@ export default {
                 }]
             }
         },
-        ExecRole: {
+        OutpostExecRole: {
             Type: 'AWS::IAM::Role',
             Properties: {
                 AssumeRolePolicyDocument: {
@@ -201,8 +185,8 @@ export default {
                     Key: 'Name',
                     Value: cf.join('-', [cf.stackName, 'ldap-outpost'])
                 }],
-                ExecutionRoleArn: cf.getAtt('ExecRole', 'Arn'),
-                TaskRoleArn: cf.getAtt('TaskRole', 'Arn'),
+                ExecutionRoleArn: cf.getAtt('OutpostExecRole', 'Arn'),
+                TaskRoleArn: cf.getAtt('OutpostTaskRole', 'Arn'),
                 ContainerDefinitions: [{
                     Name: 'AuthentikLdapOutpost',
                     Image: cf.join([cf.accountId, '.dkr.ecr.', cf.region, '.amazonaws.com/coe-ecr-auth:', cf.ref('GitSha'), '-ldap']),
@@ -214,9 +198,9 @@ export default {
                     Environment: [
                         { Name: 'StackName',                    Value: cf.stackName },
                         { Name: 'AWS_DEFAULT_REGION',           Value: cf.region },
-                        { Name: 'AUTHENTIK_HOST',               Value: cf.ref('AuthentikHost') },
+                        { Name: 'AUTHENTIK_HOST',               Value: cf.join(['https://', cf.ref('SubdomainPrefix'), '.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]) },
                         { Name: 'AUTHENTIK_INSECURE',           Value: 'false' },
-                        { Name: 'AUTHENTIK_TOKEN',              Value: cf.sub('{{resolve:secretsmanager:coe-auth-${Environment}/authentik-ldap-token:::AWSCURRENT}}') }
+                        { Name: 'AUTHENTIK_TOKEN',              Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/authentik-ldap-token:::AWSCURRENT}}') }
                     ],
                     LogConfiguration: {
                         LogDriver: 'awslogs',
@@ -233,6 +217,10 @@ export default {
         },
         OutpostService: {
             Type: 'AWS::ECS::Service',
+            DependsOn: [
+                'ALB',
+                'AuthentikSecretKey',
+            ],
             Properties: {
                 ServiceName: cf.join('-', [cf.stackName, 'LDAP-Outpost']),
                 Cluster: cf.join(['tak-vpc-', cf.ref('Environment')]),
@@ -253,7 +241,7 @@ export default {
                 NetworkConfiguration: {
                     AwsvpcConfiguration: {
                         AssignPublicIp: 'DISABLED',
-                        SecurityGroups: [cf.ref('ServiceSecurityGroup')],
+                        SecurityGroups: [cf.ref('OutpostServiceSecurityGroup')],
                         Subnets:  [
                             cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-subnet-private-a'])),
                             cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-subnet-private-b']))
@@ -263,15 +251,15 @@ export default {
                 LoadBalancers: [{
                     ContainerName: 'AuthentikLdapOutpost',
                     ContainerPort: 3389,
-                    TargetGroupArn: cf.ref('TargetGroup3389')
+                    TargetGroupArn: cf.ref('OutpostTargetGroup3389')
                 },{
                     ContainerName: 'AuthentikLdapOutpost',
                     ContainerPort: 6636,
-                    TargetGroupArn: cf.ref('TargetGroup6636')
+                    TargetGroupArn: cf.ref('OutpostTargetGroup6636')
                 }]
             }
         },
-        ServiceSecurityGroup: {
+        OutpostServiceSecurityGroup: {
             Type: 'AWS::EC2::SecurityGroup',
             Properties: {
                 Tags: [{
