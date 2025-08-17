@@ -5,12 +5,17 @@ export default {
         EFS: {
             Type: 'AWS::EFS::FileSystem',
             Properties: {
+                FileSystemTags: [{
+                    Key: 'Name',
+                    Value: cf.stackName
+                }],
+                Encrypted: true,
+                KmsKeyId: cf.ref('KMS'),
+                PerformanceMode: 'generalPurpose',
+                ThroughputMode: 'bursting',
                 BackupPolicy: {
                     Status: 'DISABLED'
-                },
-                Encrypted: true,
-                PerformanceMode: 'generalPurpose',
-                ThroughputMode: 'bursting'
+                }
             }
         },
         EFSMountTargetSecurityGroup: {
@@ -31,39 +36,25 @@ export default {
                 VpcId: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-vpc']))
             }
         },
-        EFSAccessPointLDAP: {
+        EFSAccessPointMedia: {
             Type: 'AWS::EFS::AccessPoint',
             Properties: {
+                AccessPointTags: [{
+                    Key: 'Name',
+                    Value: cf.join('-', [cf.stackName, 'authentik-media-accesspoint'])
+                }],
                 FileSystemId: cf.ref('EFS'),
                 PosixUser: {
-                    Uid: 0,
-                    Gid: 0
+                    Uid: 1000,
+                    Gid: 1000
                 },
                 RootDirectory: {
                     CreationInfo: {
-                        OwnerGid: 0,
-                        OwnerUid: 0,
-                        Permissions: '0777'
+                        OwnerGid: 1000,
+                        OwnerUid: 1000,
+                        Permissions: '755'
                     },
-                    Path: '/ldap'
-                }
-            }
-        },
-        EFSAccessPointSLAPD: {
-            Type: 'AWS::EFS::AccessPoint',
-            Properties: {
-                FileSystemId: cf.ref('EFS'),
-                PosixUser: {
-                    Uid: 0,
-                    Gid: 0
-                },
-                RootDirectory: {
-                    CreationInfo: {
-                        OwnerGid: 0,
-                        OwnerUid: 0,
-                        Permissions: '0777'
-                    },
-                    Path: '/slapd.d'
+                    Path: '/media'
                 }
             }
         },

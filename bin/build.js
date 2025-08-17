@@ -1,3 +1,4 @@
+import fs from 'node:fs/promises';
 import CP from 'child_process';
 
 process.env.GITSHA = sha();
@@ -8,7 +9,7 @@ for (const env of [
     'GITSHA',
     'AWS_REGION',
     'AWS_ACCOUNT_ID',
-    'Environment'
+    'Environment',
 ]) {
     if (!process.env[env]) {
         console.error(`${env} Env Var must be set`);
@@ -17,9 +18,15 @@ for (const env of [
 }
 
 await login();
-await authinfraopenldap();
+
+console.error('ok - building containers');
+
+await server();
+await ldap();
 
 function login() {
+    console.error('ok - logging in')
+
     return new Promise((resolve, reject) => {
         const $ = CP.exec(`
             aws ecr get-login-password \
@@ -39,12 +46,28 @@ function login() {
 
 }
 
-function authinfraopenldap() {
+function ldap() {
     return new Promise((resolve, reject) => {
         const $ = CP.exec(`
-            docker compose build openldap \
-            && docker tag auth-infra-openldap:latest "$\{AWS_ACCOUNT_ID\}.dkr.ecr.$\{AWS_REGION\}.amazonaws.com/coe-ecr-auth:$\{GITSHA\}" \
-            && docker push "$\{AWS_ACCOUNT_ID\}.dkr.ecr.$\{AWS_REGION\}.amazonaws.com/coe-ecr-auth:$\{GITSHA\}"
+            docker compose build authentik-ldap \
+            && docker tag auth-infra-authentik-ldap:latest "$\{AWS_ACCOUNT_ID\}.dkr.ecr.$\{AWS_REGION\}.amazonaws.com/coe-ecr-auth:$\{GITSHA\}-ldap" \
+            && docker push "$\{AWS_ACCOUNT_ID\}.dkr.ecr.$\{AWS_REGION\}.amazonaws.com/coe-ecr-auth:$\{GITSHA\}-ldap"
+        `, (err) => {
+            if (err) return reject(err);
+            return resolve();
+        });
+
+        $.stdout.pipe(process.stdout);
+        $.stderr.pipe(process.stderr);
+    });
+}
+
+function server() {
+    return new Promise((resolve, reject) => {
+        const $ = CP.exec(`
+            docker compose build authentik-server \
+            && docker tag auth-infra-authentik-server:latest "$\{AWS_ACCOUNT_ID\}.dkr.ecr.$\{AWS_REGION\}.amazonaws.com/coe-ecr-auth:$\{GITSHA\}-server" \
+            && docker push "$\{AWS_ACCOUNT_ID\}.dkr.ecr.$\{AWS_REGION\}.amazonaws.com/coe-ecr-auth:$\{GITSHA\}-server"
         `, (err) => {
             if (err) return reject(err);
             return resolve();
@@ -57,7 +80,7 @@ function authinfraopenldap() {
 
 function sha() {
     const git = CP.spawnSync('git', [
-        '--git-dir', new URL('.git', import.meta.url).pathname,
+        '--git-dir', new URL('../.git', import.meta.url).pathname,
         'rev-parse', 'HEAD'
     ]);
 

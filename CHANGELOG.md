@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### PENDING: v3.0.0 - 2025-08-17
+
+- :tada: Move to Authentik
+
 ### v2.1.0 - 2025-06-16
 
 - :tada: Add Retention on AWS Secrets

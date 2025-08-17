@@ -31,8 +31,8 @@ jobs:
           role-session-name: GithubECRBuilder
           aws-region: ${{secrets.AWS_REGION}}
 
-      - name: Docker Build Task
-        run: npm run build
+      - name: Docker Build
+        run: node bin/build.js
         env:
           AWS_ACCOUNT_ID: ${{secrets.AWS_ACCOUNT_ID}}
           AWS_REGION: ${{secrets.AWS_REGION}}
@@ -44,8 +44,8 @@ jobs:
           role-session-name: GithubECRBuilder
           aws-region: ${{secrets.AWS_STAGING_REGION}}
 
-      - name: Docker Build Task
-        run: npm run build
+      - name: Docker Build (STAGING)
+        run: node bin/build.js
         env:
           AWS_ACCOUNT_ID: ${{secrets.AWS_STAGING_ACCOUNT_ID}}
           AWS_REGION: ${{secrets.AWS_STAGING_REGION}}

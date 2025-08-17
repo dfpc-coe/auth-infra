@@ -1,9 +1,9 @@
 services:
-  openldap:
-    build: ./
-    environment:
-      - LDAP_DOMAIN=cotak.gov
-      - LDAP_ADMIN_PASSWORD=admin
-      - LDAP_SVC_PASSWORD=service
-    ports:
-      - "3389:389"
+  authentik-server:
+    platform: linux/amd64
+    build: docker/authentik-server/
+    restart: always
+  authentik-ldap:
+    platform: linux/amd64
+    build: docker/authentik-ldap/
+    restart: always

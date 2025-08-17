@@ -1,13 +1,19 @@
 import cf from '@openaddresses/cloudfriend';
 import API from './lib/api.js';
+import DB from './lib/db.js';
 import KMS from './lib/kms.js';
 import EFS from './lib/efs.js';
+import REDIS from './lib/redis.js';
+import LDAP from './lib/ldap.js';
 import { ELB as ELBAlarms } from '@openaddresses/batch-alarms';
 
 export default cf.merge(
     API,
+    DB,
     KMS,
     EFS,
+    REDIS,
+    LDAP,
     {
         Description: 'Template for @tak-ps/auth-infra',
         Parameters: {
@@ -20,16 +26,17 @@ export default cf.merge(
                 Type: 'String',
                 Default: 'prod'
             },
-            AlarmEmail: {
-                Description: 'Email to send alarms to',
-                Type: 'String'
+            EnvType: {
+                Description: 'Environment type',
+                Type: 'String',
+                AllowedValues: ['prod', 'dev-test'],
+                Default: 'prod'
             }
         }
     },
     ELBAlarms({
-        prefix: 'AuthELB',
-        loadbalancer: cf.getAtt('ELB', 'LoadBalancerFullName'),
+        prefix: 'AuthALB',
+        loadbalancer: cf.getAtt('ALB', 'LoadBalancerFullName'),
         targetgroup: cf.getAtt('TargetGroup', 'TargetGroupFullName')
-
     })
 );
