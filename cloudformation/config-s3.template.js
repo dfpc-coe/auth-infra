@@ -22,7 +22,7 @@ export default cf.merge({
             }
         },
         KMS: {
-            Type : 'AWS::KMS::Key',
+            Type: 'AWS::KMS::Key',
             Properties: {
                 Description: cf.stackName,
                 Enabled: true,

@@ -1,23 +1,24 @@
 {
-  "name": "@tak-ps/auth-infra",
-  "version": "1.0.0",
-  "description": "<h1 align=center>TAK Auth Infra</h1>",
-  "homepage": "https://github.com/dfpc-coe/auth-infra#readme",
-  "bugs": {
-    "url": "https://github.com/dfpc-coe/auth-infra/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/dfpc-coe/auth-infra.git"
-  },
-  "license": "ISC",
-  "author": "",
-  "type": "commonjs",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "dependencies": {
-    "@openaddresses/cloudfriend": "^7.4.0"
-  }
+    "name": "@tak-ps/auth-infra",
+    "private": true,
+    "type": "module",
+    "version": "1.0.0",
+    "description": "<h1 align=center>TAK Auth Infra</h1>",
+    "homepage": "https://github.com/dfpc-coe/auth-infra#readme",
+    "bugs": {
+        "url": "https://github.com/dfpc-coe/auth-infra/issues"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/dfpc-coe/auth-infra.git"
+    },
+    "license": "ISC",
+    "author": "Nicholas Ingalls <nicholas.ingalls@state.co.us>",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "dependencies": {
+        "@openaddresses/batch-alarms": "^4.7.4",
+        "@openaddresses/cloudfriend": "^7.4.0"
+    }
 }

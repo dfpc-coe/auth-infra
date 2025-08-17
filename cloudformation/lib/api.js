@@ -100,8 +100,8 @@ export default {
                 Scheme: 'internet-facing',
                 SecurityGroups: [cf.ref('ALBSecurityGroup')],
                 Subnets:  [
-                    cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-public-a'])),
-                    cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-public-b']))
+                    cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-subnet-public-a'])),
+                    cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-subnet-public-b']))
                 ]
             }
 
@@ -126,7 +126,7 @@ export default {
                     FromPort: 80,
                     ToPort: 80
                 }],
-                VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc']))
+                VpcId: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-vpc']))
             }
         },
         HTTPListener: {
@@ -176,7 +176,7 @@ export default {
                     }
                 ],
                 TargetType: "ip",
-                VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc']))
+                VpcId: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-vpc']))
             }
         },
         TaskRole: {
@@ -221,7 +221,7 @@ export default {
                             ],
                             Resource: [
                                 cf.getAtt('KMS', 'Arn'),
-                                cf.importValue(cf.join(['coe-auth-config-s3-', cf.ref('Environment'), '-kms']))
+                                cf.importValue(cf.join(['tak-authentik-config-s3-', cf.ref('Environment'), '-kms']))
                             ]
                         },{
                             Effect: 'Allow',
@@ -230,7 +230,7 @@ export default {
                                 'secretsmanager:GetSecretValue'
                             ],
                             Resource: [
-                                cf.join([cf.importValue(cf.join(['coe-auth-config-s3-', cf.ref('Environment'), '-s3'])), '/*'])
+                                cf.join([cf.importValue(cf.join(['tak-authentik-config-s3-', cf.ref('Environment'), '-s3'])), '/*'])
                             ]
                         }]
                     }
@@ -270,7 +270,7 @@ export default {
                             ],
                             Resource: [
                                 cf.getAtt('KMS', 'Arn'),
-                                cf.importValue(cf.join(['coe-auth-config-s3-', cf.ref('Environment'), '-kms']))
+                                cf.importValue(cf.join(['tak-authentik-config-s3-', cf.ref('Environment'), '-kms']))
                             ]
                         },{
                             Effect: 'Allow',
@@ -288,7 +288,7 @@ export default {
                                 's3:GetBucketLocation'
                             ],
                             Resource: [
-                                cf.join([cf.importValue(cf.join(['coe-auth-config-s3-', cf.ref('Environment'), '-s3'])), '/*'])
+                                cf.join([cf.importValue(cf.join(['tak-authentik-config-s3-', cf.ref('Environment'), '-s3'])), '/*'])
                             ] 
                         }]
                     }
@@ -367,8 +367,7 @@ export default {
                     EnvironmentFiles: [
                         cf.if('S3ConfigValueSet', 
                             {
-                                //Value: cf.join(['arn:', cf.partition, ':s3:::coe-auth-config-s3-', cf.ref('Environment'), '-', cf.region, '-env-config/authentik-config.env']),
-                                Value: cf.join([cf.join([cf.importValue(cf.join(['coe-auth-config-s3-', cf.ref('Environment'), '-s3'])), '/authentik-config.env'])]),
+                                Value: cf.join([cf.join([cf.importValue(cf.join(['tak-authentik-config-s3-', cf.ref('Environment'), '-s3'])), '/authentik-config.env'])]),
                                 Type: 's3' 
                             },
                             cf.ref('AWS::NoValue')
@@ -461,8 +460,7 @@ export default {
                     EnvironmentFiles: [
                         cf.if('S3ConfigValueSet', 
                             {
-                                //Value: cf.join(['arn:', cf.partition, ':s3:::coe-auth-config-s3-', cf.ref('Environment'), '-', cf.region, '-env-config/authentik-config.env']),
-                                Value: cf.join([cf.join([cf.importValue(cf.join(['coe-auth-config-s3-', cf.ref('Environment'), '-s3'])), '/authentik-config.env'])]),
+                                Value: cf.join([cf.join([cf.importValue(cf.join(['tak-authentik-config-s3-', cf.ref('Environment'), '-s3'])), '/authentik-config.env'])]),
                                 Type: 's3' 
                             },
                             cf.ref('AWS::NoValue')
@@ -487,7 +485,7 @@ export default {
             Type: 'AWS::ECS::Service',
             Properties: {
                 ServiceName: cf.join('-', [cf.stackName, 'Server']),
-                Cluster: cf.join(['coe-ecs-', cf.ref('Environment')]),
+                Cluster: cf.join(['tak-vpc-', cf.ref('Environment')]),
                 DeploymentConfiguration: {
                     Alarms: {
                         AlarmNames: [],
@@ -507,8 +505,8 @@ export default {
                         AssignPublicIp: 'DISABLED',
                         SecurityGroups: [cf.ref('ServiceSecurityGroup')],
                         Subnets:  [
-                            cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-private-a'])),
-                            cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-private-b']))
+                            cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-subnet-private-a'])),
+                            cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-subnet-private-b']))
                         ]
                     }
                 },
@@ -523,7 +521,7 @@ export default {
             Type: 'AWS::ECS::Service',
             Properties: {
                 ServiceName: cf.join('-', [cf.stackName, 'Worker']),
-                Cluster: cf.join(['coe-ecs-', cf.ref('Environment')]),
+                Cluster: cf.join(['tak-vpc-', cf.ref('Environment')]),
                 DeploymentConfiguration: {
                     Alarms: {
                         AlarmNames: [],
@@ -543,8 +541,8 @@ export default {
                         AssignPublicIp: 'DISABLED',
                         SecurityGroups: [cf.ref('ServiceSecurityGroup')],
                         Subnets:  [
-                            cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-private-a'])),
-                            cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-subnet-private-b']))
+                            cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-subnet-private-a'])),
+                            cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-subnet-private-b']))
                         ]
                     }
                 }
@@ -559,7 +557,7 @@ export default {
                 }],
                 GroupName: cf.join('-', [cf.stackName, 'ecs-service-sg']),
                 GroupDescription: cf.join('-', [cf.stackName, 'ecs-sg']),
-                VpcId: cf.importValue(cf.join(['coe-vpc-', cf.ref('Environment'), '-vpc'])),
+                VpcId: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-vpc'])),
                 SecurityGroupIngress: [{
                     Description: 'ALB Traffic',
                     SourceSecurityGroupId: cf.ref('ALBSecurityGroup'),

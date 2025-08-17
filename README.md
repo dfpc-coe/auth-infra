@@ -15,7 +15,6 @@ The following are dependencies which need to be created:
 | Name                  | Notes |
 | --------------------- | ----- |
 | `tak-vpc-<name>`      | VPC & networking to place tasks in - [repo](https://github.com/dfpc-coe/vpc)      |
-| `coe-ecr-auth`        | ECR Repository for storing Auth-Infra Images - [repo](https://github.com/dfpc-coe/ecr)   |
 
 An AWS ACM certificate must also be generated that covers the subdomain that the Auth-Infra is deployed to.
 
