@@ -1,0 +1,9 @@
+services:
+  authentik-server:
+    platform: linux/amd64
+    build: docker/authentik-server/
+    restart: always
+  authentik-ldap:
+    platform: linux/amd64
+    build: docker/authentik-ldap/
+    restart: always
