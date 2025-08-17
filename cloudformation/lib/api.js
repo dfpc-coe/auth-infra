@@ -362,7 +362,7 @@ export default {
                         StartPeriod: 60,
                         Timeout: 30
                     },
-                    Image: 'ghcr.io/goauthentik/server:2025.2.4',
+                    Image: cf.join([cf.accountId, '.dkr.ecr.', cf.region, '.amazonaws.com/coe-ecr-auth:', cf.ref('GitSha'), '-server']),
                     MountPoints: [{
                         ContainerPath: '/media',
                         SourceVolume: cf.join([cf.stackName, '-media'])
