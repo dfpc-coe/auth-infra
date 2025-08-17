@@ -15,7 +15,7 @@ export default {
         AuthentikHost: {
             Description: 'URL of the Authentik auth service',
             Type: 'String'
-        },
+        }
     },
     Resources: {
         NLB: {
@@ -64,7 +64,7 @@ export default {
                 }],
                 LoadBalancerArn: cf.ref('NLB'),
                 Port: 389,
-                Protocol: "TCP"
+                Protocol: 'TCP'
             }
         },
         LDAPSListener: {
@@ -79,7 +79,7 @@ export default {
                 }],
                 LoadBalancerArn: cf.ref('NLB'),
                 Port: 636,
-                Protocol: "TLS"
+                Protocol: 'TLS'
             }
         },
         TargetGroup3389: {
@@ -226,7 +226,7 @@ export default {
                             'awslogs-stream-prefix': cf.stackName,
                             'awslogs-create-group': true
                         }
-                    }, 
+                    },
                     Essential: true
                 }]
             }
@@ -249,7 +249,7 @@ export default {
                 TaskDefinition: cf.ref('OutpostTaskDefinition'),
                 LaunchType: 'FARGATE',
                 HealthCheckGracePeriodSeconds: 300,
-                DesiredCount: cf.if('CreateProdResources', 2, 1)
+                DesiredCount: cf.if('CreateProdResources', 2, 1),
                 NetworkConfiguration: {
                     AwsvpcConfiguration: {
                         AssignPublicIp: 'DISABLED',

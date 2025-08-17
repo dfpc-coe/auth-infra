@@ -2,9 +2,15 @@
     "name": "@tak-ps/auth-infra",
     "private": true,
     "type": "module",
-    "version": "1.0.0",
-    "description": "<h1 align=center>TAK Auth Infra</h1>",
+    "version": "3.0.0",
+    "description": "TAK Auth Infra",
     "homepage": "https://github.com/dfpc-coe/auth-infra#readme",
+    "scripts": {
+        "lint": "eslint cloudformation/"
+    },
+    "engines": {
+        "node": ">= 22"
+    },
     "bugs": {
         "url": "https://github.com/dfpc-coe/auth-infra/issues"
     },
@@ -14,11 +20,15 @@
     },
     "license": "ISC",
     "author": "Nicholas Ingalls <nicholas.ingalls@state.co.us>",
-    "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1"
-    },
     "dependencies": {
         "@openaddresses/batch-alarms": "^4.7.4",
         "@openaddresses/cloudfriend": "^7.4.0"
+    },
+    "devDependencies": {
+        "eslint": "^9.9.0",
+        "eslint-plugin-n": "^17.10.2",
+        "tape": "^5.9.0",
+        "typescript": "^5.6.3",
+        "typescript-eslint": "^8.12.2"
     }
 }

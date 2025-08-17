@@ -25,7 +25,7 @@ export default {
         SubdomainPrefix: {
             Description: 'Subdomain prefix for Authentik, e.g. "authentik"',
             Type: 'String',
-            Default: 'authentik',
+            Default: 'authentik'
         }
     },
     Resources: {
@@ -55,7 +55,7 @@ export default {
             Properties: {
                 Description: cf.join([cf.stackName, ' Authentik Secret Key']),
                 GenerateSecretString: {
-                    ExcludeCharacters: "\"@/\\",
+                    ExcludeCharacters: '"@/\\',
                     PasswordLength: 64
                 },
                 Name: cf.join([cf.stackName, '/authentik-secret-key']),
@@ -81,7 +81,7 @@ export default {
             Properties: {
                 Description: cf.join([cf.stackName, ' Authentik Admin User Token']),
                 GenerateSecretString: {
-                    ExcludeCharacters: "\"@/\\",
+                    ExcludeCharacters: '"@/\\',
                     PasswordLength: 32
                 },
                 Name: cf.join([cf.stackName, '/authentik-admin-token']),
@@ -92,7 +92,7 @@ export default {
             Type: 'AWS::SecretsManager::Secret',
             Properties: {
                 Description: cf.join([cf.stackName, ' Authentik LDAP Outpost Token']),
-                "SecretString": "replace-me",
+                'SecretString': 'replace-me',
                 Name: cf.join([cf.stackName, '/authentik-ldap-token']),
                 KmsKeyId: cf.ref('KMS')
             }
@@ -154,13 +154,13 @@ export default {
                 DefaultActions: [{
                     Type: 'redirect',
                     RedirectConfig: {
-                        Protocol: "HTTPS",
-                        StatusCode: "HTTP_301"
+                        Protocol: 'HTTPS',
+                        StatusCode: 'HTTP_301'
                     }
                 }],
                 LoadBalancerArn: cf.ref('ALB'),
                 Port: 80,
-                Protocol: "HTTP"
+                Protocol: 'HTTP'
             }
         },
         HTTPSListener: {
@@ -175,26 +175,26 @@ export default {
                 }],
                 LoadBalancerArn: cf.ref('ALB'),
                 Port: 443,
-                Protocol: "HTTPS"
+                Protocol: 'HTTPS'
             }
         },
         TargetGroup: {
             Type: 'AWS::ElasticLoadBalancingV2::TargetGroup',
             DependsOn: 'ALB',
             Properties: {
-                HealthCheckPath: "/-/health/live/",
+                HealthCheckPath: '/-/health/live/',
                 Matcher: {
-                    HttpCode: "200"
+                    HttpCode: '200'
                 },
                 Port: 9000,
-                Protocol: "HTTP",
+                Protocol: 'HTTP',
                 TargetGroupAttributes: [
                     {
-                        Key: "stickiness.enabled",
-                        Value: "false"
+                        Key: 'stickiness.enabled',
+                        Value: 'false'
                     }
                 ],
-                TargetType: "ip",
+                TargetType: 'ip',
                 VpcId: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-vpc']))
             }
         },
@@ -350,7 +350,7 @@ export default {
                 }],
                 ContainerDefinitions: [{
                     Name: 'AuthentikServerContainer',
-                    Command: [ 'server' ],
+                    Command: ['server'],
                     HealthCheck: {
                         Command: [
                             'CMD',
@@ -440,7 +440,7 @@ export default {
                 }],
                 ContainerDefinitions: [{
                     Name: 'AuthentikWorkerContainer',
-                    Command: [ 'worker' ],
+                    Command: ['worker'],
                     HealthCheck: {
                         Command: [
                             'CMD',
@@ -483,7 +483,7 @@ export default {
                                 Type: 's3'
                             },
                             cf.ref('AWS::NoValue')
-                        )                    ],
+                        )],
                     LogConfiguration: {
                         LogDriver: 'awslogs',
                         Options: {

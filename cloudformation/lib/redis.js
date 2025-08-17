@@ -14,7 +14,7 @@ export default {
                 EngineVersion: '7.1',
                 NumCacheClusters: cf.if('CreateProdResources', 2, 1),
                 PreferredMaintenanceWindow: 'Sun:22:30-Sun:23:30',
-                ReplicationGroupDescription: "Redis cluster for authentik",
+                ReplicationGroupDescription: 'Redis cluster for authentik',
                 SecurityGroupIds: [
                     cf.ref('AuthentikRedisSecurityGroup')
                 ]
@@ -43,7 +43,7 @@ export default {
                     IpProtocol: 'tcp',
                     FromPort: 6379,
                     ToPort: 6379,
-                    SourceSecurityGroupId: cf.getAtt('ServiceSecurityGroup', 'GroupId')         
+                    SourceSecurityGroupId: cf.getAtt('ServiceSecurityGroup', 'GroupId')
                 }],
                 VpcId: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-vpc']))
             }
