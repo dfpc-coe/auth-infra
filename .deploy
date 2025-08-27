@@ -1,5 +1,5 @@
 {
-    "name": "tak-auth",
+    "name": "tak-authentik",
     "profile": "coegc",
     "region": "us-gov-east-1",
     "tags": [
@@ -11,8 +11,7 @@
         "Client"
     ],
     "artifacts": {
-        "docker": [
-            "coe-ecr-auth:{{gitsha}}"
+        "docker": [            
         ]
     }
 }
