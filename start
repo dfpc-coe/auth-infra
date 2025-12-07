@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-if [[ ${FORCE_NEW_CONFIG} == "true" ]]; then
+if [[ ${FORCE_NEW_CONFIG:-false} == "true" ]]; then
     rm -rf "/var/lib/ldap/*"
     rm -rf "/etc/ldap/slapd.d/*"
 fi
@@ -17,6 +17,8 @@ echo "ORG: ${ORG}"
 echo "TLD: ${TLD}"
 
 SERVICE_PASSWORD="$(slappasswd -h "{SSHA}" -s "${LDAP_SVC_PASSWORD}")"
+
+mkdir -p "/container/service/slapd/assets/config/bootstrap/ldif"
 
 for filename in /container/templates/*.ldif; do
     echo "Building ${filename}"

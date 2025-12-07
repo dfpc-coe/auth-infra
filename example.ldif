@@ -1,0 +1,30 @@
+dn: uid=joeblow@example.org,ou=People,dc=cotak,dc=gov
+uid: joeblow@example.org
+mail: joeblow@example.org
+cn: Joe Blow
+sn: Joe Blow
+userPassword: {SSHA}ocjQ/onXTw1Hg5rVWtTAKq3+7qwZ68ha
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+
+dn: uid=janedoe@example.org,ou=People,dc=cotak,dc=gov
+uid: janedoe@example.org
+mail: janedoe@example.org
+cn: Jane Doe
+sn: Jane Doe
+userPassword: {SSHA}ocjQ/onXTw1Hg5rVWtTAKq3+7qw7GfTb
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+
+dn: cn=Hello World,ou=Group,dc=cotak,dc=gov
+description: Example Group
+cn: Hello World
+objectClass: top
+objectClass: groupOfNames
+member: uid=joeblow@example.org,ou=People,dc=cotak,dc=gov
+member: uid=janedoe@example.org,ou=People,dc=cotak,dc=gov
+ 

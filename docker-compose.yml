@@ -2,8 +2,8 @@ services:
   openldap:
     build: ./
     environment:
-      - LDAP_DOMAIN=cotak.gov
-      - LDAP_ADMIN_PASSWORD=admin
-      - LDAP_SVC_PASSWORD=service
+      - LDAP_DOMAIN=${LDAP_DOMAIN:-cotak.gov}
+      - LDAP_ADMIN_PASSWORD=${LDAP_ADMIN_PASSWORD:-admin}
+      - LDAP_SVC_PASSWORD=${LDAP_SVC_PASSWORD:-service}
     ports:
-      - "3389:389"
+      - "${LDAP_PORT:-3389}:389"

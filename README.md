@@ -95,26 +95,67 @@ npx deploy info --help
 
 ### Example Local Testing
 
-1. Build the Docker Image
+1. Create a .env.local file at the project root with the following contents:
 
 ```sh
-docker compose up --build
+LDAP_DOMAIN=cotak.gov
+LDAP_ADMIN_PASSWORD=admin
+LDAP_SVC_PASSWORD=service
+LDAP_PORT=3389
+FORCE_NEW_CONFIG=false
 ```
 
-2. Populate the database with users
+... adjusting the values as necessary.
+
+The FORCE_NEW_CONFIG flag is used to delete all existing slapd configuration data and start from scratch.  We suggest
+initially testing with the example.ldif in step 3, then create your real ldif file, set this flag to true and rebuild from step 2.
+
+The LDAP_PORT is the external port exposed by the docker container that your TAK server will connect to.
+
+2. Build the Docker Image
 
 ```sh
-ldapmodify -D 'cn=admin,dc=cotak,dc=gov' -H ldap://localhost:3389 -w admin -f <INPUT FILE>
+docker compose --env-file .env.local up -d --build
 ```
 
-3. Ensure the service account can list users
+3. Populate the database with users
 
+```sh
+ldapadd -D 'cn=admin,dc=cotak,dc=gov' -H ldap://localhost:3389 -w admin -f example.diff
 ```
+
+An example LDIF file for adding users and groups is provided in the example.ldif file.  You can use this for initial testing.
+
+SSHA passwords can be generated using the following command:
+
+```shell
+slappasswd -h {SSHA} -s "your_password_here
+```
+
+4. Ensure the service account can list users
+
+The service account is the read-only "bind" account that the TAK server uses to authenticate and enumerate users.
+
+Replace your domain and password as appropriate:
+
+```shell
 ldapsearch -v -x -D 'uid=ldapsvcaccount,dc=cotak,dc=gov' -b 'dc=cotak,dc=gov' -H ldap://localhost:3389 -w service
 ```
 
-4. Ensure the admin account can list users
+This should return a comprehensive list of all the policies, groups and users.
 
+5. Ensure the memberOf overlay is working
+
+As an additional check, ensure that the memberOf overlay is working by searching for an individual user and checking that there are memberOf attributes included in the response, corresponding to the group(s) they belong to.
+
+```shell
+ldapsearch -v -x -D 'uid=ldapsvcaccount,dc=cotak,dc=gov' -b 'ou=People,dc=cotak,dc=gov' -H ldap://localhost:3389 -w service -x "uid=janedoe@example.org" +
 ```
-ldapsearch -x -H ldap://localhost:3389 -b dc=cotak,dc=gov -D "cn=admin,dc=cotak,dc=gov" -w admin
+
+6. Ensure the admin account can list users
+
+The admin account is the fully privileged account that can add/remove users and groups, used by your provisioning software (not by the TAK server).
+
+```shell
+ldapsearch -v -x -D 'cn=admin,dc=cotak,dc=gov' -b 'dc=cotak,dc=gov' -H ldap://localhost:3389 -w admin
 ```
