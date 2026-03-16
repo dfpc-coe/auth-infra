@@ -19,6 +19,26 @@ jobs:
   build:
     runs-on: ubuntu-latest
     if: github.event.pull_request.draft == false
+    timeout-minutes: 20
+    strategy:
+      matrix:
+        include:
+          - name: COTAK Production
+            environment: cotak-prod
+            account_scope: prod
+            aws_partition: aws-us-gov
+          - name: WFTAK Production
+            environment: wftak-prod
+            account_scope: prod
+            aws_partition: aws-us-gov
+          - name: COTAK Staging
+            environment: cotak-staging
+            account_scope: staging
+            aws_partition: aws
+          - name: WFTAK Staging
+            environment: wftak-staging
+            account_scope: staging
+            aws_partition: aws
     steps:
       - uses: actions/checkout@v4
         with:
@@ -27,25 +47,13 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws-us-gov:iam::${{secrets.AWS_ACCOUNT_ID}}:role/Github-ECR-Builder
+          role-to-assume: arn:${{ matrix.aws_partition }}:iam::${{ matrix.account_scope == 'prod' && secrets.AWS_ACCOUNT_ID || secrets.AWS_STAGING_ACCOUNT_ID }}:role/Github-ECR-Builder
           role-session-name: GithubECRBuilder
-          aws-region: ${{secrets.AWS_REGION}}
+          aws-region: ${{ matrix.account_scope == 'prod' && secrets.AWS_REGION || secrets.AWS_STAGING_REGION }}
 
-      - name: Docker Build
+      - name: Docker Build (${{ matrix.name }})
         run: node bin/build.js
         env:
-          AWS_ACCOUNT_ID: ${{secrets.AWS_ACCOUNT_ID}}
-          AWS_REGION: ${{secrets.AWS_REGION}}
-
-      - name: Configure AWS Credentials (STAGING)
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::${{secrets.AWS_STAGING_ACCOUNT_ID}}:role/Github-ECR-Builder
-          role-session-name: GithubECRBuilder
-          aws-region: ${{secrets.AWS_STAGING_REGION}}
-
-      - name: Docker Build (STAGING)
-        run: node bin/build.js
-        env:
-          AWS_ACCOUNT_ID: ${{secrets.AWS_STAGING_ACCOUNT_ID}}
-          AWS_REGION: ${{secrets.AWS_STAGING_REGION}}
+          Environment: ${{ matrix.environment }}
+          AWS_ACCOUNT_ID: ${{ matrix.account_scope == 'prod' && secrets.AWS_ACCOUNT_ID || secrets.AWS_STAGING_ACCOUNT_ID }}
+          AWS_REGION: ${{ matrix.account_scope == 'prod' && secrets.AWS_REGION || secrets.AWS_STAGING_REGION }}
