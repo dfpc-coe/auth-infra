@@ -50,8 +50,8 @@ function ldap() {
     return new Promise((resolve, reject) => {
         const $ = CP.exec(`
             docker compose build authentik-ldap \
-            && docker tag auth-infra-authentik-ldap:latest "$\{AWS_ACCOUNT_ID\}.dkr.ecr.$\{AWS_REGION\}.amazonaws.com/coe-ecr-auth:$\{GITSHA\}-ldap" \
-            && docker push "$\{AWS_ACCOUNT_ID\}.dkr.ecr.$\{AWS_REGION\}.amazonaws.com/coe-ecr-auth:$\{GITSHA\}-ldap"
+            && docker tag auth-infra-authentik-ldap:latest "$\{AWS_ACCOUNT_ID\}.dkr.ecr.$\{AWS_REGION\}.amazonaws.com/tak-vpc-${process.env.Environment}-auth:$\{GITSHA\}-ldap" \
+            && docker push "$\{AWS_ACCOUNT_ID\}.dkr.ecr.$\{AWS_REGION\}.amazonaws.com/tak-vpc-${process.env.Environment}-auth:$\{GITSHA\}-ldap"
         `, (err) => {
             if (err) return reject(err);
             return resolve();
@@ -66,8 +66,8 @@ function server() {
     return new Promise((resolve, reject) => {
         const $ = CP.exec(`
             docker compose build authentik-server \
-            && docker tag auth-infra-authentik-server:latest "$\{AWS_ACCOUNT_ID\}.dkr.ecr.$\{AWS_REGION\}.amazonaws.com/coe-ecr-auth:$\{GITSHA\}-server" \
-            && docker push "$\{AWS_ACCOUNT_ID\}.dkr.ecr.$\{AWS_REGION\}.amazonaws.com/coe-ecr-auth:$\{GITSHA\}-server"
+            && docker tag auth-infra-authentik-server:latest "$\{AWS_ACCOUNT_ID\}.dkr.ecr.$\{AWS_REGION\}.amazonaws.com/tak-vpc-${process.env.Environment}-auth:$\{GITSHA\}-server" \
+            && docker push "$\{AWS_ACCOUNT_ID\}.dkr.ecr.$\{AWS_REGION\}.amazonaws.com/tak-vpc-${process.env.Environment}-auth:$\{GITSHA\}-server"
         `, (err) => {
             if (err) return reject(err);
             return resolve();
