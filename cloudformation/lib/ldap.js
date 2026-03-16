@@ -219,7 +219,7 @@ export default {
             Type: 'AWS::ECS::Service',
             DependsOn: [
                 'ALB',
-                'AuthentikSecretKey',
+                'AuthentikSecretKey'
             ],
             Properties: {
                 ServiceName: cf.join('-', [cf.stackName, 'LDAP-Outpost']),
