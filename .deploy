@@ -12,6 +12,8 @@
     ],
     "artifacts": {
         "docker": [            
+            "tak-vpc-{{stack}}-auth:{{gitsha}}-ldap",
+            "tak-vpc-{{stack}}-auth:{{gitsha}}-server"
         ]
     }
 }
