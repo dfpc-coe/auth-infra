@@ -189,7 +189,7 @@ export default {
                 TaskRoleArn: cf.getAtt('OutpostTaskRole', 'Arn'),
                 ContainerDefinitions: [{
                     Name: 'AuthentikLdapOutpost',
-                    Image: cf.join([cf.accountId, '.dkr.ecr.', cf.region, '.amazonaws.com/coe-ecr-auth:', cf.ref('GitSha'), '-ldap']),
+                    Image: cf.join([cf.accountId, '.dkr.ecr.', cf.region, '.amazonaws.com/tak-vpc-', cf.ref('Environment'), '-auth:', cf.ref('GitSha'), '-ldap']),
                     PortMappings: [{
                         ContainerPort: 3389
                     },{
