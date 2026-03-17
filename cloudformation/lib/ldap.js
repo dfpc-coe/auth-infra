@@ -55,7 +55,7 @@ export default {
             Type: 'AWS::ElasticLoadBalancingV2::Listener',
             Properties: {
                 Certificates: [{
-                    CertificateArn: cf.ref('SSLCertificateARN')
+                    CertificateArn: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-acm']))
                 }],
                 DefaultActions: [{
                     Type: 'forward',

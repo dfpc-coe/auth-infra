@@ -8,7 +8,7 @@ export default {
                 AutomaticFailoverEnabled: cf.if('CreateProdResources', true, false),
                 AtRestEncryptionEnabled: true,
                 KmsKeyId: cf.ref('KMS'),
-                CacheNodeType: 'cache.t4g.micro',
+                CacheNodeType: cf.if('IsGovCloudPartition', 'cache.t3.micro', 'cache.t4g.micro'),
                 CacheSubnetGroupName: cf.ref('AuthentikRedisSubnetGroup'),
                 Engine: 'redis',
                 EngineVersion: '7.1',
@@ -50,6 +50,7 @@ export default {
         }
     },
     Conditions: {
+        IsGovCloudPartition: cf.equals(cf.partition, 'aws-us-gov'),
         CreateProdResources: cf.equals(cf.ref('EnvType'), 'prod')
     }
 };

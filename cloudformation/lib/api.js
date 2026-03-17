@@ -8,10 +8,6 @@ export default {
             AllowedValues: ['true', 'false'],
             Default: false
         },
-        SSLCertificateARN: {
-            Description: 'ACM SSL Certificate ARN for HTTPS Protocol',
-            Type: 'String'
-        },
         AuthentikAdminUserEmail: {
             Description: 'E-Mail address for the Authentik akadmin user',
             Type: 'String'
@@ -167,7 +163,7 @@ export default {
             Type: 'AWS::ElasticLoadBalancingV2::Listener',
             Properties: {
                 Certificates: [{
-                    CertificateArn: cf.ref('SSLCertificateARN')
+                    CertificateArn: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-acm']))
                 }],
                 DefaultActions: [{
                     Type: 'forward',
