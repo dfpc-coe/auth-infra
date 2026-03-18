@@ -32,7 +32,7 @@ Deployment to AWS is handled via AWS Cloudformation. The template can be found i
 directory. The deployment itself is performed by [Deploy](https://github.com/openaddresses/deploy) which
 was installed in the previous step.
 
-> [!NOTE] 
+> [!NOTE]
 > The deploy tool can be run via the following
 >
 > ```sh
@@ -40,9 +40,9 @@ was installed in the previous step.
 > ```
 >
 > To install it globally - view the deploy [README](https://github.com/openaddresses/deploy)
-> 
+>
 > Deploy uses your existing AWS credentials. Ensure that your `~/.aws/credentials` has an entry like:
-> 
+>
 > ```
 > [coe]
 > aws_access_key_id = <redacted>
@@ -74,27 +74,23 @@ The first portion deploys the Authentik Server itself. The second portion deploy
 Step 1: Create the Authenik Server Portion
 
 ```
-npx deploy create <stack> 
+npx deploy create <stack>
 ```
 
-Step 2: Setup a DNS CNAME for the web interface
+Step 2: Configure the Authentik LDAP Provider
 
-Create a DNS CNAME from your desired hostname for the Authentik server to the ALB hostname. The ALB hostname is one of the CloudFormation template outputs. An example would be `auth.cotak.gov -> coe-auth-production-123456789.us-gov-west-1.elb.amazonaws.com`. End-users and admins will communicate with this endpoint to manage user accounts. 
-
-Step 3: Configure the Authentik LDAP Provider
-
-Follow the instructions of the Authentik documentation to [create and LDAP provider](https://docs.goauthentik.io/docs/add-secure-apps/providers/ldap/generic_setup). 
+Follow the instructions of the Authentik documentation to [create and LDAP provider](https://docs.goauthentik.io/docs/add-secure-apps/providers/ldap/generic_setup).
 
 * **LDAP Service Account:** The username and password have been created by the above CloudFormation template as a Secrets Manager secret in `coe-auth-<stack>>/svc`.
 * **LDAP Outpost AUTHENTIK_TOKEN:** The Authentik server will create an AUTHENTIK_TOKEN for the LDAP Outpost, which needs to be saved in Secrets Manager as the secret for `coe-auth-<stack>>/authentik-ldap-token`
 
-Step 4: Create the Authentik LDAP Outpost
+Step 3: Create the Authentik LDAP Outpost
 
 ```
 npx deploy create <stack> --template ./cloudformation/ldap.template.js
 ```
 
-Step 5: Setup a DNS CNAME for the LDAPS interface
+Step 4: Setup a DNS CNAME for the LDAPS interface
 
-Create a DNS CNAME from your desired hostname for the LDAPS service to the internal NLB hostname. The NLB hostname is one of the CloudFormation template outputs. An example would be `ldap.cotak.gov -> coe-auth-ldap-production-123456789.us-gov-west-1.elb.amazonaws.com`. The TAK server will communicate with this endpoint to authenticate and authorize users. 
+Create a DNS CNAME from your desired hostname for the LDAPS service to the internal NLB hostname. The NLB hostname is one of the CloudFormation template outputs. An example would be `ldap.cotak.gov -> coe-auth-ldap-production-123456789.us-gov-west-1.elb.amazonaws.com`. The TAK server will communicate with this endpoint to authenticate and authorize users.
 
