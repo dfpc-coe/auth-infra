@@ -198,9 +198,28 @@ export default {
                     Environment: [
                         { Name: 'StackName',                    Value: cf.stackName },
                         { Name: 'AWS_DEFAULT_REGION',           Value: cf.region },
-                        { Name: 'AUTHENTIK_HOST',               Value: cf.join(['https://', cf.ref('SubdomainPrefix'), '.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]) },
+                        { Name: 'AUTHENTIK_HOST',               Value: cf.join(['https://auth.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]) },
                         { Name: 'AUTHENTIK_INSECURE',           Value: 'false' },
-                        { Name: 'AUTHENTIK_TOKEN',              Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/authentik-ldap-token:::AWSCURRENT}}') }
+                        { Name: 'AUTHENTIK_TOKEN',              Value: {
+                            'Fn::Sub': [
+                                '{{resolve:secretsmanager:${SecretName}:::AWSCURRENT}}',
+                                {
+                                    SecretName: {
+                                        'Fn::Join': ['/', [{
+                                            'Fn::Join': ['-', [{
+                                                'Fn::Select': [0, {
+                                                    'Fn::Split': ['-ldap-', cf.stackName]
+                                                }]
+                                            }, {
+                                                'Fn::Select': [1, {
+                                                    'Fn::Split': ['-ldap-', cf.stackName]
+                                                }]
+                                            }]]
+                                        }, 'authentik-ldap-token']]
+                                    }
+                                }
+                            ]
+                        } }
                     ],
                     LogConfiguration: {
                         LogDriver: 'awslogs',
@@ -217,10 +236,6 @@ export default {
         },
         OutpostService: {
             Type: 'AWS::ECS::Service',
-            DependsOn: [
-                'ALB',
-                'AuthentikSecretKey'
-            ],
             Properties: {
                 ServiceName: cf.join('-', [cf.stackName, 'LDAP-Outpost']),
                 Cluster: cf.join(['tak-vpc-', cf.ref('Environment')]),
@@ -233,7 +248,7 @@ export default {
                     MaximumPercent: 200,
                     MinimumHealthyPercent: 50
                 },
-                EnableExecuteCommand: cf.ref('EnableExecute'),
+                EnableExecuteCommand: false,
                 TaskDefinition: cf.ref('OutpostTaskDefinition'),
                 LaunchType: 'FARGATE',
                 HealthCheckGracePeriodSeconds: 300,
