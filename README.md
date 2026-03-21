@@ -98,3 +98,6 @@ The LDAP outpost is exposed as LDAPS only on port `636`. The LDAP CloudFormation
 
 TLS terminates on the NLB at port `636` and the decrypted LDAP traffic is forwarded internally to the outpost on port `3389`.
 
+```
+ldapsearch -x -H ldaps://ldap.<domain>:636 -D "cn=akadmin,ou=users,dc=ldap,dc=goauthentik,dc=io" -W -b "ou=users,dc=ldap,dc=goauthentik,dc=io" -s sub "(objectClass=person)" dn cn uid mail
+```
