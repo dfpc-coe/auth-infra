@@ -2,6 +2,20 @@ import cf from '@openaddresses/cloudfriend';
 
 export default {
     Resources: {
+        LDAPDNS: {
+            Type: 'AWS::Route53::RecordSet',
+            Properties: {
+                HostedZoneId: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-id'])),
+                Type : 'A',
+                Name: cf.join(['ldap.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]),
+                Comment: cf.join(' ', [cf.stackName, 'Internal LDAP DNS Entry']),
+                AliasTarget: {
+                    DNSName: cf.getAtt('NLB', 'DNSName'),
+                    EvaluateTargetHealth: true,
+                    HostedZoneId: cf.getAtt('NLB', 'CanonicalHostedZoneID')
+                }
+            }
+        },
         NLB: {
             Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer',
             Properties: {

@@ -90,7 +90,7 @@ Step 3: Create the Authentik LDAP Outpost
 npx deploy create <stack> --template ./cloudformation/ldap.template.js
 ```
 
-Step 4: Setup a DNS CNAME for the LDAPS interface
+Step 4: Verify the LDAP DNS record
 
-Create a DNS CNAME from your desired hostname for the LDAPS service to the internal NLB hostname. The NLB hostname is one of the CloudFormation template outputs. An example would be `ldap.cotak.gov -> coe-auth-ldap-production-123456789.us-gov-west-1.elb.amazonaws.com`. The TAK server will communicate with this endpoint to authenticate and authorize users.
+The LDAP stack now creates an `ldap.<hosted-zone-name>` Route53 alias automatically and points it at the internal NLB. For example, if the hosted zone is `epatak.org`, the stack will create `ldap.epatak.org`.
 
