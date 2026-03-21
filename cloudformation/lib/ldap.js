@@ -35,34 +35,16 @@ export default {
             Properties : {
                 Tags: [{
                     Key: 'Name',
-                    Value: cf.join('-', [cf.stackName, 'nlb-sg'])
+                    Value: cf.join('-', [cf.stackName, 'nlb-sg-ldap'])
                 }],
-                GroupName: cf.join('-', [cf.stackName, 'nlb-sg']),
-                GroupDescription: 'Allow 389 and 636 Access to NLB',
+                GroupDescription: 'Allow 636 Access to NLB',
                 SecurityGroupIngress: [{
                     CidrIp: '10.0.0.0/8',
                     IpProtocol: 'tcp',
-                    FromPort: 389,
-                    ToPort: 389
-                },{
-                    CidrIp: '10.0.0.0/8',
-                    IpProtocol: 'tcp',
-                    FromPort: 80,
-                    ToPort: 80
+                    FromPort: 636,
+                    ToPort: 636
                 }],
                 VpcId: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-vpc']))
-            }
-        },
-        LDAPListener: {
-            Type: 'AWS::ElasticLoadBalancingV2::Listener',
-            Properties: {
-                DefaultActions: [{
-                    Type: 'forward',
-                    TargetGroupArn: cf.ref('OutpostTargetGroup3389')
-                }],
-                LoadBalancerArn: cf.ref('NLB'),
-                Port: 389,
-                Protocol: 'TCP'
             }
         },
         LDAPSListener: {
@@ -73,7 +55,7 @@ export default {
                 }],
                 DefaultActions: [{
                     Type: 'forward',
-                    TargetGroupArn: cf.ref('OutpostTargetGroup6636')
+                    TargetGroupArn: cf.ref('OutpostTargetGroup3389')
                 }],
                 LoadBalancerArn: cf.ref('NLB'),
                 Port: 636,
@@ -92,23 +74,6 @@ export default {
                 HealthCheckEnabled: true,
                 HealthCheckIntervalSeconds: 30,
                 HealthCheckPort: 3389,
-                HealthCheckProtocol: 'TCP',
-                HealthCheckTimeoutSeconds: 10,
-                HealthyThresholdCount: 2
-            }
-        },
-        OutpostTargetGroup6636: {
-            Type: 'AWS::ElasticLoadBalancingV2::TargetGroup',
-            DependsOn: 'NLB',
-            Properties: {
-                Port: 6636,
-                Protocol: 'TCP',
-                TargetType: 'ip',
-                VpcId: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-vpc'])),
-
-                HealthCheckEnabled: true,
-                HealthCheckIntervalSeconds: 30,
-                HealthCheckPort: 6636,
                 HealthCheckProtocol: 'TCP',
                 HealthCheckTimeoutSeconds: 10,
                 HealthyThresholdCount: 2
@@ -206,8 +171,6 @@ export default {
                     Image: cf.join([cf.accountId, '.dkr.ecr.', cf.region, '.amazonaws.com/tak-vpc-', cf.ref('Environment'), '-auth:', cf.ref('GitSha'), '-ldap']),
                     PortMappings: [{
                         ContainerPort: 3389
-                    },{
-                        ContainerPort: 6636
                     }],
                     Environment: [
                         { Name: 'StackName',                    Value: cf.stackName },
@@ -281,10 +244,6 @@ export default {
                     ContainerName: 'AuthentikLdapOutpost',
                     ContainerPort: 3389,
                     TargetGroupArn: cf.ref('OutpostTargetGroup3389')
-                },{
-                    ContainerName: 'AuthentikLdapOutpost',
-                    ContainerPort: 6636,
-                    TargetGroupArn: cf.ref('OutpostTargetGroup6636')
                 }]
             }
         },
@@ -295,21 +254,14 @@ export default {
                     Key: 'Name',
                     Value: cf.join('-', [cf.stackName, 'ecs-ldap-sg'])
                 }],
-                GroupName: cf.join('-', [cf.stackName, 'ecs-ldap-sg']),
                 GroupDescription: cf.join('-', [cf.stackName, 'ecs-sg']),
                 VpcId: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-vpc'])),
                 SecurityGroupIngress: [{
-                    Description: 'LDAP Traffic',
+                    Description: 'LDAP Traffic From TLS-Terminating NLB',
                     SourceSecurityGroupId: cf.ref('NLBSecurityGroup'),
                     IpProtocol: 'tcp',
                     FromPort: 3389,
                     ToPort: 3389
-                },{
-                    Description: 'LDAPS Traffic',
-                    SourceSecurityGroupId: cf.ref('NLBSecurityGroup'),
-                    IpProtocol: 'tcp',
-                    FromPort: 6636,
-                    ToPort: 6636
                 }]
             }
         }
@@ -319,7 +271,7 @@ export default {
     },
     Outputs: {
         LDAP: {
-            Description: 'LDAP(S) endpoint for CNAME target',
+            Description: 'LDAPS endpoint for Route53 alias target',
             Export: {
                 Name: cf.join([cf.stackName, '-ldap'])
             },

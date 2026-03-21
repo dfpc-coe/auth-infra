@@ -94,3 +94,7 @@ Step 4: Verify the LDAP DNS record
 
 The LDAP stack now creates an `ldap.<hosted-zone-name>` Route53 alias automatically and points it at the internal NLB. For example, if the hosted zone is `epatak.org`, the stack will create `ldap.epatak.org`.
 
+The LDAP outpost is exposed as LDAPS only on port `636`. The LDAP CloudFormation template automatically associates the VPC ACM certificate with the secure listener.
+
+TLS terminates on the NLB at port `636` and the decrypted LDAP traffic is forwarded internally to the outpost on port `3389`.
+
