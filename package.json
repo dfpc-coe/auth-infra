@@ -29,7 +29,7 @@
         "eslint": "^10.0.0",
         "eslint-plugin-n": "^17.10.2",
         "tape": "^5.9.0",
-        "typescript": "^5.6.3",
+        "typescript": "^6.0.0",
         "typescript-eslint": "^8.12.2"
     }
 }
