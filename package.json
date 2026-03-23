@@ -21,7 +21,7 @@
     "license": "ISC",
     "author": "Nicholas Ingalls <nicholas.ingalls@state.co.us>",
     "dependencies": {
-        "@openaddresses/batch-alarms": "^5.0.1",
+        "@openaddresses/batch-alarms": "^5.0.2",
         "@openaddresses/cloudfriend": "^7.4.0"
     },
     "devDependencies": {
