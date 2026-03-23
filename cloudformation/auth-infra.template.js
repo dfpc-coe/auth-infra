@@ -3,7 +3,6 @@ import API from './lib/api.js';
 import DB from './lib/db.js';
 import KMS from './lib/kms.js';
 import EFS from './lib/efs.js';
-import REDIS from './lib/redis.js';
 import { ELB as ELBAlarms } from '@openaddresses/batch-alarms';
 
 export default cf.merge(
@@ -11,7 +10,6 @@ export default cf.merge(
     DB,
     KMS,
     EFS,
-    REDIS,
     {
         Description: 'Template for @tak-ps/auth-infra',
         Parameters: {
