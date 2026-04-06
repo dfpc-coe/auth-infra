@@ -28,7 +28,7 @@
         "@eslint/js": "^10.0.1",
         "eslint": "^10.0.0",
         "eslint-plugin-n": "^17.10.2",
-        "typescript": "^5.0.0",
+        "typescript": "^6.0.0",
         "typescript-eslint": "^8.12.2"
     }
 }
