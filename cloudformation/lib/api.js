@@ -6,7 +6,7 @@ export default {
             Description: 'Allow SSH into docker container - should only be enabled for limited debugging',
             Type: 'String',
             AllowedValues: ['true', 'false'],
-            Default: false
+            Default: 'false'
         },
         AuthentikAdminUserEmail: {
             Description: 'E-Mail address for the Authentik akadmin user',
@@ -16,7 +16,19 @@ export default {
             Description: 'Use authentik-config.env config file in S3 bucket',
             Type: 'String',
             AllowedValues: ['true', 'false'],
-            Default: false
+            Default: 'false'
+        },
+        ServerAutoScalingMinCapacity: {
+            Description: 'Minimum desired count for the Authentik server ECS service',
+            Type: 'Number',
+            Default: 1,
+            MinValue: 1
+        },
+        ServerAutoScalingMaxCapacity: {
+            Description: 'Maximum desired count for the Authentik server ECS service',
+            Type: 'Number',
+            Default: 6,
+            MinValue: 1
         },
         SubdomainPrefix: {
             Description: 'Subdomain prefix for Authentik, e.g. "authentik", ldap will be created at <subdomain>-ldap.<domain>',
@@ -512,7 +524,7 @@ export default {
                 TaskDefinition: cf.ref('ServerTaskDefinition'),
                 LaunchType: 'FARGATE',
                 HealthCheckGracePeriodSeconds: 300,
-                DesiredCount: cf.if('CreateProdResources', 2, 1),
+                DesiredCount: 1,
                 NetworkConfiguration: {
                     AwsvpcConfiguration: {
                         AssignPublicIp: 'DISABLED',
@@ -528,6 +540,54 @@ export default {
                     ContainerPort: 9000,
                     TargetGroupArn: cf.ref('TargetGroup')
                 }]
+            }
+        },
+        ServerServiceScalableTarget: {
+            Type: 'AWS::ApplicationAutoScaling::ScalableTarget',
+            DependsOn: 'ServerService',
+            Properties: {
+                MaxCapacity: cf.ref('ServerAutoScalingMaxCapacity'),
+                MinCapacity: cf.ref('ServerAutoScalingMinCapacity'),
+                ResourceId: cf.join([
+                    'service/',
+                    cf.join(['tak-vpc-', cf.ref('Environment')]),
+                    '/',
+                    cf.join('-', [cf.stackName, 'Server'])
+                ]),
+                ScalableDimension: 'ecs:service:DesiredCount',
+                ServiceNamespace: 'ecs'
+            }
+        },
+        ServerServiceCPUScalingPolicy: {
+            Type: 'AWS::ApplicationAutoScaling::ScalingPolicy',
+            Properties: {
+                PolicyName: cf.join('-', [cf.stackName, 'server-cpu-scaling']),
+                PolicyType: 'TargetTrackingScaling',
+                ScalingTargetId: cf.ref('ServerServiceScalableTarget'),
+                TargetTrackingScalingPolicyConfiguration: {
+                    PredefinedMetricSpecification: {
+                        PredefinedMetricType: 'ECSServiceAverageCPUUtilization'
+                    },
+                    ScaleInCooldown: 120,
+                    ScaleOutCooldown: 60,
+                    TargetValue: 60
+                }
+            }
+        },
+        ServerServiceMemoryScalingPolicy: {
+            Type: 'AWS::ApplicationAutoScaling::ScalingPolicy',
+            Properties: {
+                PolicyName: cf.join('-', [cf.stackName, 'server-memory-scaling']),
+                PolicyType: 'TargetTrackingScaling',
+                ScalingTargetId: cf.ref('ServerServiceScalableTarget'),
+                TargetTrackingScalingPolicyConfiguration: {
+                    PredefinedMetricSpecification: {
+                        PredefinedMetricType: 'ECSServiceAverageMemoryUtilization'
+                    },
+                    ScaleInCooldown: 120,
+                    ScaleOutCooldown: 60,
+                    TargetValue: 75
+                }
             }
         },
         WorkerService: {
@@ -583,7 +643,7 @@ export default {
     },
     Conditions: {
         CreateProdResources: cf.equals(cf.ref('EnvType'), 'prod'),
-        S3ConfigValueSet: cf.equals(cf.ref('AuthentikConfigFile'), true)
+        S3ConfigValueSet: cf.equals(cf.ref('AuthentikConfigFile'), 'true')
     },
     Outputs: {
         API: {

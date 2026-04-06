@@ -83,6 +83,10 @@ The custom Authentik server image in this repository bakes in
 server and worker processes. It is currently used to enable Django BCrypt password hashers for imported legacy
 passwords.
 
+The Authentik server ECS service now always uses target-tracking autoscaling. CPU utilization is hardcoded to a
+60% target and memory utilization is hardcoded to a 75% target. The CloudFormation parameters
+`ServerAutoScalingMinCapacity` and `ServerAutoScalingMaxCapacity` can be used to bound cost.
+
 Step 2: Configure the Authentik LDAP Provider
 
 Follow the instructions of the Authentik documentation to [create and LDAP provider](https://docs.goauthentik.io/docs/add-secure-apps/providers/ldap/generic_setup).
