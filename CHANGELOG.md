@@ -12,7 +12,11 @@
 
 ### Pending Release
 
-### PENDING: v3.0.0 - 2025-08-17
+### v3.1.0 - 2026-04-20
+
+- :arrow_up: Update to latest Authentik
+
+### v3.0.0 - 2025-08-17
 
 - :tada: Move to Authentik
 
