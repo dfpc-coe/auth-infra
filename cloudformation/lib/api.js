@@ -30,11 +30,6 @@ export default {
             Default: 6,
             MinValue: 1
         },
-        SubdomainPrefix: {
-            Description: 'Subdomain prefix for Authentik, e.g. "authentik", ldap will be created at <subdomain>-ldap.<domain>',
-            Type: 'String',
-            Default: 'authentik'
-        }
     },
     Resources: {
         ALBDNS: {
@@ -42,7 +37,7 @@ export default {
             Properties: {
                 HostedZoneId: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-id'])),
                 Type : 'A',
-                Name: cf.join([cf.ref('SubdomainPrefix'), '.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]),
+                Name: cf.join(['authentik.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]),
                 Comment: cf.join(' ', [cf.stackName, 'DNS Entry']),
                 AliasTarget: {
                     DNSName: cf.getAtt('ALB', 'DNSName'),
