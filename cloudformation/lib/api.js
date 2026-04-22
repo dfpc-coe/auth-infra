@@ -37,7 +37,7 @@ export default {
             Properties: {
                 HostedZoneId: cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-id'])),
                 Type : 'A',
-                Name: cf.join(['authentik.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]),
+                Name: cf.join(['auth.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]),
                 Comment: cf.join(' ', [cf.stackName, 'DNS Entry']),
                 AliasTarget: {
                     DNSName: cf.getAtt('ALB', 'DNSName'),
