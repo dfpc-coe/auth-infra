@@ -29,7 +29,7 @@ export default {
             Type: 'Number',
             Default: 6,
             MinValue: 1
-        },
+        }
     },
     Resources: {
         ALBDNS: {
