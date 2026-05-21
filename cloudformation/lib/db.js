@@ -5,7 +5,7 @@ export default {
         DatabaseVersion: {
             Description: 'Aurora PostgreSQL database engine version',
             Type: 'String',
-            Default: '16.6'
+            Default: '16.8'
         }
     },
     Resources: {

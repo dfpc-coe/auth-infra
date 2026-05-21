@@ -330,8 +330,8 @@ export default {
             ],
             Properties: {
                 Family: cf.stackName,
-                Cpu: 512,
-                Memory: 1024,
+                Cpu: 1024,
+                Memory: 2048,
                 NetworkMode: 'awsvpc',
                 RequiresCompatibilities: ['FARGATE'],
                 Tags: [{
