@@ -25,6 +25,7 @@ export default {
         },
         DBMasterSecretAttachment: {
             Type: 'AWS::SecretsManager::SecretTargetAttachment',
+            DependsOn: ['DBCluster'],
             Properties: {
                 SecretId: cf.ref('DBMasterSecret'),
                 TargetId: cf.ref('DBCluster'),

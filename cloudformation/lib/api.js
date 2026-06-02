@@ -537,6 +537,25 @@ export default {
                 }]
             }
         },
+        AutoScalingRole: {
+            Type: 'AWS::IAM::Role',
+            Properties: {
+                AssumeRolePolicyDocument: {
+                    Version: '2012-10-17',
+                    Statement: [{
+                        Effect: 'Allow',
+                        Principal: {
+                            Service: 'application-autoscaling.amazonaws.com'
+                        },
+                        Action: 'sts:AssumeRole'
+                    }]
+                },
+                ManagedPolicyArns: [
+                    cf.join(['arn:', cf.partition, ':iam::aws:policy/service-role/AmazonEC2ContainerServiceAutoscaleRole'])
+                ],
+                Path: '/service-role/'
+            }
+        },
         ServerServiceScalableTarget: {
             Type: 'AWS::ApplicationAutoScaling::ScalableTarget',
             DependsOn: 'ServerService',
@@ -549,6 +568,7 @@ export default {
                     '/',
                     cf.join('-', [cf.stackName, 'Server'])
                 ]),
+                RoleARN: cf.getAtt('AutoScalingRole', 'Arn'),
                 ScalableDimension: 'ecs:service:DesiredCount',
                 ServiceNamespace: 'ecs'
             }
