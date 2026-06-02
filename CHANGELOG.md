@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v3.2.0 - 2026-05-02
+
+- :arrow_up: Authentik@2026.5.2
+
 ### v3.1.0 - 2026-04-20
 
 - :arrow_up: Update to latest Authentik
