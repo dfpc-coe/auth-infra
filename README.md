@@ -112,7 +112,12 @@ TLS terminates on the NLB at port `636` and the decrypted LDAP traffic is forwar
 ldapsearch -x -H ldaps://ldap.<domain>:636 -D "cn=akadmin,ou=users,dc=ldap,dc=goauthentik,dc=io" -W -b "ou=users,dc=ldap,dc=goauthentik,dc=io" -s sub "(objectClass=person)" dn cn uid mail
 ```
 
-Bind Example:
+### Bind Examples
+
 ```
 ldapsearch -x -H ldaps://ldap.<domain>:636 -D "cn=<username>,ou=users,dc=ldap,dc=goauthentik,dc=io" -W -b "ou=users,dc=ldap,dc=goauthentik,dc=io" -s sub "(objectClass=person)" dn cn uid mail
+```
+
+```
+ldapsearch -x -H ldaps://ldap.cotak.gov:636   -D "cn=nicholas.ingalls@state.co.us,ou=users,dc=ldap,dc=goauthentik,dc=io" -W   -b "ou=groups,dc=ldap,dc=goauthentik,dc=io"   -s sub "(member=cn=nicholas.ingalls@state.co.us,ou=users,dc=ldap,dc=goauthentik,dc=io)" dn cn description
 ```
