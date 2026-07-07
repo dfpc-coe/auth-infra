@@ -156,8 +156,8 @@ export default {
             Type: 'AWS::ECS::TaskDefinition',
             Properties: {
                 Family: cf.stackName,
-                Cpu: cf.if('CreateProdResources', 1024 * 2, 512),
-                Memory: cf.if('CreateProdResources', 2048 * 2, 1024),
+                Cpu: cf.if('CreateProdResources', 1024 * 4, 512),
+                Memory: cf.if('CreateProdResources', 2048 * 4, 1024),
                 NetworkMode: 'awsvpc',
                 RequiresCompatibilities: ['FARGATE'],
                 Tags: [{
