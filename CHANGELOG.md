@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v3.6.0 - 2026-08-18
+
+- :tada: S3 media storage, replacing the EFS /media mount
+
 ### v3.5.0 - 2026-07-27
 
 - :arrow_up: Authentik@2026.5.6

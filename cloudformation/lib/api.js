@@ -254,6 +254,26 @@ export default {
                             Resource: [
                                 cf.join([cf.importValue(cf.join(['tak-authentik-config-s3-', cf.ref('Environment'), '-s3'])), '/*'])
                             ]
+                        },{
+                            Effect: 'Allow',
+                            Action: [
+                                's3:ListBucket'
+                            ],
+                            Resource: [
+                                cf.getAtt('MediaBucket', 'Arn')
+                            ]
+                        },{
+                            Effect: 'Allow',
+                            Action: [
+                                's3:GetObject',
+                                's3:PutObject',
+                                's3:DeleteObject',
+                                's3:AbortMultipartUpload',
+                                's3:ListMultipartUploadParts'
+                            ],
+                            Resource: [
+                                cf.join([cf.getAtt('MediaBucket', 'Arn'), '/*'])
+                            ]
                         }]
                     }
                 }]
@@ -326,7 +346,7 @@ export default {
             DependsOn: [
                 'DBMasterSecret',
                 'AuthentikSecretKey',
-                'EFSAccessPointMedia'
+                'MediaBucket'
             ],
             Properties: {
                 Family: cf.stackName,
@@ -340,17 +360,6 @@ export default {
                 }],
                 ExecutionRoleArn: cf.getAtt('ExecRole', 'Arn'),
                 TaskRoleArn: cf.getAtt('TaskRole', 'Arn'),
-                Volumes: [{
-                    Name: cf.join([cf.stackName, '-media']),
-                    EFSVolumeConfiguration: {
-                        FilesystemId: cf.ref('EFS'),
-                        TransitEncryption: 'ENABLED',
-                        AuthorizationConfig: {
-                            AccessPointId: cf.ref('EFSAccessPointMedia')
-                        },
-                        RootDirectory: '/'
-                    }
-                }],
                 ContainerDefinitions: [{
                     Name: 'AuthentikServerContainer',
                     Command: ['server'],
@@ -366,10 +375,6 @@ export default {
                         Timeout: 30
                     },
                     Image: cf.join([cf.accountId, '.dkr.ecr.', cf.region, '.amazonaws.com/tak-vpc-', cf.ref('Environment'), '-auth:', cf.ref('GitSha'), '-server']),
-                    MountPoints: [{
-                        ContainerPath: '/media',
-                        SourceVolume: cf.join([cf.stackName, '-media'])
-                    }],
                     PortMappings: [{
                         ContainerPort: 9000
                     }],
@@ -379,7 +384,10 @@ export default {
                         { Name: 'AUTHENTIK_POSTGRESQL__HOST',                   Value: cf.getAtt('DBCluster', 'Endpoint.Address') },
                         { Name: 'AUTHENTIK_POSTGRESQL__USER',                   Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/rds/secret:SecretString:username:AWSCURRENT}}') },
                         { Name: 'AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__HOST', Value: cf.getAtt('DBCluster', 'ReadEndpoint.Address') },
-                        { Name: 'AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__USER', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/rds/secret:SecretString:username:AWSCURRENT}}') }
+                        { Name: 'AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__USER', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/rds/secret:SecretString:username:AWSCURRENT}}') },
+                        { Name: 'AUTHENTIK_STORAGE__BACKEND',                  Value: 's3' },
+                        { Name: 'AUTHENTIK_STORAGE__S3__REGION',               Value: cf.region },
+                        { Name: 'AUTHENTIK_STORAGE__S3__BUCKET_NAME',          Value: cf.ref('MediaBucket') }
                     ],
                     Secrets: [
                         { Name: 'AUTHENTIK_POSTGRESQL__PASSWORD',   ValueFrom: cf.join([cf.ref('DBMasterSecret'), ':password::']) },
@@ -415,12 +423,12 @@ export default {
             DependsOn: [
                 'DBMasterSecret',
                 'AuthentikSecretKey',
-                'EFSAccessPointMedia'
+                'MediaBucket'
             ],
             Properties: {
                 Family: cf.stackName,
-                Cpu: 512,
-                Memory: 1024,
+                Cpu: 1024,
+                Memory: 1024 * 4,
                 NetworkMode: 'awsvpc',
                 RequiresCompatibilities: ['FARGATE'],
                 Tags: [{
@@ -429,17 +437,6 @@ export default {
                 }],
                 ExecutionRoleArn: cf.getAtt('ExecRole', 'Arn'),
                 TaskRoleArn: cf.getAtt('TaskRole', 'Arn'),
-                Volumes: [{
-                    Name: cf.join([cf.stackName, '-media']),
-                    EFSVolumeConfiguration: {
-                        FilesystemId: cf.ref('EFS'),
-                        TransitEncryption: 'ENABLED',
-                        AuthorizationConfig: {
-                            AccessPointId: cf.ref('EFSAccessPointMedia')
-                        },
-                        RootDirectory: '/'
-                    }
-                }],
                 ContainerDefinitions: [{
                     Name: 'AuthentikWorkerContainer',
                     Command: ['worker'],
@@ -455,10 +452,6 @@ export default {
                         Timeout: 30
                     },
                     Image: cf.join([cf.accountId, '.dkr.ecr.', cf.region, '.amazonaws.com/tak-vpc-', cf.ref('Environment'), '-auth:', cf.ref('GitSha'), '-server']),
-                    MountPoints: [{
-                        ContainerPath: '/media',
-                        SourceVolume: cf.join([cf.stackName, '-media'])
-                    }],
                     PortMappings: [{
                         ContainerPort: 9000
                     }],
@@ -471,7 +464,10 @@ export default {
                         { Name: 'AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__USER', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/rds/secret:SecretString:username:AWSCURRENT}}') },
                         { Name: 'AUTHENTIK_BOOTSTRAP_PASSWORD',                 Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/authentik-admin-user-password:SecretString:password:AWSCURRENT}}') },
                         { Name: 'AUTHENTIK_BOOTSTRAP_TOKEN',                    Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/authentik-admin-token:::AWSCURRENT}}') },
-                        { Name: 'AUTHENTIK_BOOTSTRAP_EMAIL',                    Value: cf.ref('AuthentikAdminUserEmail') }
+                        { Name: 'AUTHENTIK_BOOTSTRAP_EMAIL',                    Value: cf.ref('AuthentikAdminUserEmail') },
+                        { Name: 'AUTHENTIK_STORAGE__BACKEND',                  Value: 's3' },
+                        { Name: 'AUTHENTIK_STORAGE__S3__REGION',               Value: cf.region },
+                        { Name: 'AUTHENTIK_STORAGE__S3__BUCKET_NAME',          Value: cf.ref('MediaBucket') }
                     ],
                     Secrets: [
                         { Name: 'AUTHENTIK_POSTGRESQL__PASSWORD',   ValueFrom: cf.join([cf.ref('DBMasterSecret'), ':password::']) },

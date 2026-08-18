@@ -83,6 +83,17 @@ The custom Authentik server image in this repository bakes in
 server and worker processes. It is currently used to enable Django BCrypt password hashers for imported legacy
 passwords.
 
+#### Media Storage
+
+Authentik media is stored in S3 per the [S3 storage guide](https://docs.goauthentik.io/sys-mgmt/ops/storage-s3/).
+The server stack creates a `<stack>-<region>-media` bucket, KMS encrypted with all public access blocked, and a
+CORS rule allowing `GET` from `https://auth.<hosted-zone-name>`.
+
+`AUTHENTIK_STORAGE__BACKEND`, `AUTHENTIK_STORAGE__S3__REGION` and `AUTHENTIK_STORAGE__S3__BUCKET_NAME` are set on
+the server and worker containers. There is no access key - the ECS task role carries the bucket permissions.
+
+The bucket is retained on stack delete.
+
 The Authentik server ECS service now always uses target-tracking autoscaling. CPU utilization is hardcoded to a
 60% target and memory utilization is hardcoded to a 75% target. The CloudFormation parameters
 `ServerAutoScalingMinCapacity` and `ServerAutoScalingMaxCapacity` can be used to bound cost.

@@ -2,14 +2,14 @@ import cf from '@openaddresses/cloudfriend';
 import API from './lib/api.js';
 import DB from './lib/db.js';
 import KMS from './lib/kms.js';
-import EFS from './lib/efs.js';
+import Media from './lib/media.js';
 import { ELB as ELBAlarms } from '@openaddresses/batch-alarms';
 
 export default cf.merge(
     API,
     DB,
     KMS,
-    EFS,
+    Media,
     {
         Description: 'Template for @tak-ps/auth-infra',
         Parameters: {
