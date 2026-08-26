@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v3.7.0 - 2026-08-26
+
+- :rocket: Add Authentik Log Level configuration to the module
+
 ### v3.6.0 - 2026-08-18
 
 - :tada: S3 media storage, replacing the EFS /media mount
