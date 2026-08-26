@@ -7,3 +7,6 @@ services:
     platform: linux/amd64
     build: docker/authentik-ldap/
     restart: always
+  scim:
+    platform: linux/amd64
+    build: docker/scim/

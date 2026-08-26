@@ -132,3 +132,32 @@ ldapsearch -x -H ldaps://ldap.<domain>:636 -D "cn=<username>,ou=users,dc=ldap,dc
 ```
 ldapsearch -x -H ldaps://ldap.cotak.gov:636   -D "cn=nicholas.ingalls@state.co.us,ou=users,dc=ldap,dc=goauthentik,dc=io" -W   -b "ou=groups,dc=ldap,dc=goauthentik,dc=io"   -s sub "(member=cn=nicholas.ingalls@state.co.us,ou=users,dc=ldap,dc=goauthentik,dc=io)" dn cn description
 ```
+
+### 5. Slack SCIM Bridge Deployment (Optional)
+
+Slack only supports SCIM provisioning on Enterprise Grid, so the `cloudformation/slack.js` template deploys a
+small SCIM 2.0 endpoint of its own that Authentik can target. Every Authentik group named `tak_<name>` is
+synced to a Slack channel `#<name>` (prefix stripped), with channel membership matched to the group members
+by email address. Groups without the prefix are acknowledged but ignored. Deleting a group archives the channel.
+
+The endpoint is a **private** API Gateway reachable only from inside the `tak-vpc-<name>` VPC (via an
+`execute-api` VPC endpoint) so it is never exposed to the internet.
+
+Create a Slack app installed by a workspace admin with the user scopes `channels:read`, `channels:manage`,
+`channels:write.invites`, `groups:read`, `groups:write`, `groups:write.invites`, `users:read` and `users:read.email`,
+then deploy with the resulting `xoxp-` user token:
+
+```
+npx deploy create slack --template cloudformation/slack.js
+```
+
+| Parameter              | Notes |
+| ---------------------- | ----- |
+| `SCIMSharedSecret`     | Bearer token Authentik presents to the SCIM endpoint (32+ chars) |
+| `SlackUserToken`       | Admin user OAuth token used to create/rename/archive channels and manage members |
+| `SlackGroupPrefix`     | Authentik group prefix to sync (default `tak_`) |
+| `SlackPrivateChannels` | Create synced channels as private (default `false`) |
+
+Then in Authentik create a **SCIM Provider** using the stack's `SCIMURL` output as the URL and the shared
+secret as the token, and attach it to an application as a backchannel provider. Because the endpoint is
+internal, Authentik must be running inside the same VPC (which it is when deployed via this repo).
