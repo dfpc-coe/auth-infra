@@ -12,6 +12,12 @@ export default {
             Description: 'E-Mail address for the Authentik akadmin user',
             Type: 'String'
         },
+        AuthentikLogLevel: {
+            Description: 'Log level for Authentik server and worker containers',
+            Type: 'String',
+            AllowedValues: ['debug', 'info', 'warning', 'error'],
+            Default: 'info'
+        },
         AuthentikConfigFile: {
             Description: 'Use authentik-config.env config file in S3 bucket',
             Type: 'String',
@@ -381,6 +387,7 @@ export default {
                     Environment: [
                         { Name: 'StackName',                                    Value: cf.stackName },
                         { Name: 'AWS_DEFAULT_REGION',                           Value: cf.region },
+                        { Name: 'AUTHENTIK_LOG_LEVEL',                          Value: cf.ref('AuthentikLogLevel') },
                         { Name: 'AUTHENTIK_POSTGRESQL__HOST',                   Value: cf.getAtt('DBCluster', 'Endpoint.Address') },
                         { Name: 'AUTHENTIK_POSTGRESQL__USER',                   Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/rds/secret:SecretString:username:AWSCURRENT}}') },
                         { Name: 'AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__HOST', Value: cf.getAtt('DBCluster', 'ReadEndpoint.Address') },
@@ -458,6 +465,7 @@ export default {
                     Environment: [
                         { Name: 'StackName',                                    Value: cf.stackName },
                         { Name: 'AWS_DEFAULT_REGION',                           Value: cf.region },
+                        { Name: 'AUTHENTIK_LOG_LEVEL',                          Value: cf.ref('AuthentikLogLevel') },
                         { Name: 'AUTHENTIK_POSTGRESQL__HOST',                   Value: cf.getAtt('DBCluster', 'Endpoint.Address') },
                         { Name: 'AUTHENTIK_POSTGRESQL__USER',                   Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/rds/secret:SecretString:username:AWSCURRENT}}') },
                         { Name: 'AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__HOST', Value: cf.getAtt('DBCluster', 'ReadEndpoint.Address') },
