@@ -1,0 +1,33 @@
+{
+    "name": "@tak-ps/auth-infra-scim",
+    "version": "0.0.0",
+    "type": "module",
+    "private": true,
+    "description": "SCIM endpoint that syncs Authentik groups to Slack channels",
+    "engines": {
+        "node": ">= 24"
+    },
+    "scripts": {
+        "check": "tsc --noEmit --project tsconfig.json",
+        "lint": "eslint index.ts routes/ lib/",
+        "build": "tsc --project tsconfig.json",
+        "dev": "tsx watch index.ts"
+    },
+    "dependencies": {
+        "@openaddresses/batch-error": "^2.14.1",
+        "@openaddresses/batch-schema": "^10.27.0",
+        "@sinclair/typebox": "^0.34.11",
+        "@slack/web-api": "^7.9.0",
+        "@tak-ps/serverless-http": "^3.4.0",
+        "express": "^5.0.0"
+    },
+    "devDependencies": {
+        "@eslint/js": "^10.0.1",
+        "@types/express": "^5.0.0",
+        "@types/node": "^24.0.0",
+        "eslint": "^10.0.0",
+        "tsx": "^4.21.0",
+        "typescript": "^5.9.0",
+        "typescript-eslint": "^8.12.2"
+    }
+}
