@@ -23,6 +23,7 @@ console.error('ok - building containers');
 
 await server();
 await ldap();
+await scim();
 
 function login() {
     console.error('ok - logging in')
@@ -52,6 +53,22 @@ function ldap() {
             docker compose build authentik-ldap \
             && docker tag auth-infra-authentik-ldap:latest "$\{AWS_ACCOUNT_ID\}.dkr.ecr.$\{AWS_REGION\}.amazonaws.com/tak-vpc-${process.env.Environment}-auth:$\{GITSHA\}-ldap" \
             && docker push "$\{AWS_ACCOUNT_ID\}.dkr.ecr.$\{AWS_REGION\}.amazonaws.com/tak-vpc-${process.env.Environment}-auth:$\{GITSHA\}-ldap"
+        `, (err) => {
+            if (err) return reject(err);
+            return resolve();
+        });
+
+        $.stdout.pipe(process.stdout);
+        $.stderr.pipe(process.stderr);
+    });
+}
+
+function scim() {
+    return new Promise((resolve, reject) => {
+        const $ = CP.exec(`
+            docker compose build scim \
+            && docker tag auth-infra-scim:latest "$\{AWS_ACCOUNT_ID\}.dkr.ecr.$\{AWS_REGION\}.amazonaws.com/tak-vpc-${process.env.Environment}-auth:$\{GITSHA\}-scim" \
+            && docker push "$\{AWS_ACCOUNT_ID\}.dkr.ecr.$\{AWS_REGION\}.amazonaws.com/tak-vpc-${process.env.Environment}-auth:$\{GITSHA\}-scim"
         `, (err) => {
             if (err) return reject(err);
             return resolve();
