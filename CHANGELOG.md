@@ -12,6 +12,11 @@
 
 ### Pending Release
 
+### v3.8.0 - 2026-09-09
+
+- :bug: Fix significant Memory Leak in Authentik LDAP Outpost
+- :arrow_up: Update GH Actions to Node 24
+
 ### v3.7.0 - 2026-08-26
 
 - :rocket: Add Authentik Log Level configuration to the module
