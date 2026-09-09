@@ -9,7 +9,7 @@
         "lint": "eslint cloudformation/"
     },
     "engines": {
-        "node": ">= 22"
+        "node": ">= 24"
     },
     "bugs": {
         "url": "https://github.com/dfpc-coe/auth-infra/issues"
