@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v3.9.0 - 2026-09-17
+
+- :arrow_up: Authentik@2026.8.3, dropping the patched LDAP outpost build now that the memory fix is upstream
+
 ### v3.8.0 - 2026-09-09
 
 - :bug: Fix significant Memory Leak in Authentik LDAP Outpost
