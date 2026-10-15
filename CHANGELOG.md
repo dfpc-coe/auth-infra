@@ -12,6 +12,11 @@
 
 ### Pending Release
 
+### v3.10.0 - 2026-10-15
+
+- :arrow_up: Authentik@2026.8.4
+- :rocket: Migrate secrets to Task Definition `Secrets` instead of `Environment`
+
 ### v3.9.1 - 2026-09-25
 
 - :bug: Remove old SCIM builds

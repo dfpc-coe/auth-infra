@@ -470,8 +470,6 @@ export default {
                         { Name: 'AUTHENTIK_POSTGRESQL__USER',                   Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/rds/secret:SecretString:username:AWSCURRENT}}') },
                         { Name: 'AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__HOST', Value: cf.getAtt('DBCluster', 'ReadEndpoint.Address') },
                         { Name: 'AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__USER', Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/rds/secret:SecretString:username:AWSCURRENT}}') },
-                        { Name: 'AUTHENTIK_BOOTSTRAP_PASSWORD',                 Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/authentik-admin-user-password:SecretString:password:AWSCURRENT}}') },
-                        { Name: 'AUTHENTIK_BOOTSTRAP_TOKEN',                    Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/authentik-admin-token:::AWSCURRENT}}') },
                         { Name: 'AUTHENTIK_BOOTSTRAP_EMAIL',                    Value: cf.ref('AuthentikAdminUserEmail') },
                         { Name: 'AUTHENTIK_STORAGE__BACKEND',                  Value: 's3' },
                         { Name: 'AUTHENTIK_STORAGE__S3__REGION',               Value: cf.region },
@@ -479,7 +477,9 @@ export default {
                     ],
                     Secrets: [
                         { Name: 'AUTHENTIK_POSTGRESQL__PASSWORD',   ValueFrom: cf.join([cf.ref('DBMasterSecret'), ':password::']) },
-                        { Name: 'AUTHENTIK_SECRET_KEY',             ValueFrom: cf.ref('AuthentikSecretKey') }
+                        { Name: 'AUTHENTIK_SECRET_KEY',             ValueFrom: cf.ref('AuthentikSecretKey') },
+                        { Name: 'AUTHENTIK_BOOTSTRAP_PASSWORD',     ValueFrom: cf.join([cf.ref('AuthentikAdminUserPassword'), ':password::']) },
+                        { Name: 'AUTHENTIK_BOOTSTRAP_TOKEN',        ValueFrom: cf.ref('AuthentikAdminUserToken') }
                     ],
                     EnvironmentFiles: [
                         cf.if('S3ConfigValueSet',
@@ -678,13 +678,6 @@ export default {
                 Name: cf.join([cf.stackName, '-ldap-svc-username'])
             },
             Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/svc:SecretString:username:AWSCURRENT}}')
-        },
-        LDAPServicePassword: {
-            Description: 'LDAP Service Password',
-            Export: {
-                Name: cf.join([cf.stackName, '-ldap-svc-password'])
-            },
-            Value: cf.sub('{{resolve:secretsmanager:${AWS::StackName}/svc:SecretString:password:AWSCURRENT}}')
         }
     }
 };

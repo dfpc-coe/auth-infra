@@ -154,18 +154,6 @@ export default {
                 Name: cf.join([cf.stackName, '-db-endpoint'])
             },
             Value: cf.getAtt('DBCluster', 'Endpoint.Address')
-        },
-        DB: {
-            Description: 'Postgres Connection String',
-            Value: cf.join([
-                'postgresql://',
-                cf.sub('{{resolve:secretsmanager:${AWS::StackName}/rds/secret:SecretString:username:AWSCURRENT}}'),
-                ':',
-                cf.sub('{{resolve:secretsmanager:${AWS::StackName}/rds/secret:SecretString:password:AWSCURRENT}}'),
-                '@',
-                cf.getAtt('DBCluster', 'Endpoint.Address'),
-                ':5432/authentik'
-            ])
         }
     }
 };
