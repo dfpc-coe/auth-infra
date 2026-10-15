@@ -1,4 +1,4 @@
-FROM ghcr.io/goauthentik/ldap:2026.8.3
+FROM ghcr.io/goauthentik/ldap:2026.8.4
 
 LABEL org.opencontainers.image.source=https://github.com/dfpc-coe/auth-infra
 LABEL org.opencontainers.image.description="Authentik server for TAK server auth via LDAP"
