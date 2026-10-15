@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v3.10.1 - 2026-10-15
+
+- :bug: Switch to full ARN for Secrets
+
 ### v3.10.0 - 2026-10-15
 
 - :arrow_up: Authentik@2026.8.4

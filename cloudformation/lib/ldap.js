@@ -193,7 +193,7 @@ export default {
                         { Name: 'AUTHENTIK_INSECURE',           Value: 'false' }
                     ],
                     Secrets: [
-                        { Name: 'AUTHENTIK_TOKEN', ValueFrom: cf.join([AuthStackName, '/authentik-ldap-token']) }
+                        { Name: 'AUTHENTIK_TOKEN', ValueFrom: cf.join(['arn:', cf.partition, ':secretsmanager:', cf.region, ':', cf.accountId, ':secret:', AuthStackName, '/authentik-ldap-token']) }
                     ],
                     LogConfiguration: {
                         LogDriver: 'awslogs',
