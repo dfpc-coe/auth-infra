@@ -27,16 +27,8 @@ jobs:
             environment: cotak-prod
             account_scope: prod
             aws_partition: aws-us-gov
-          - name: WFTAK Production
-            environment: wftak-prod
-            account_scope: prod
-            aws_partition: aws-us-gov
           - name: COTAK Staging
             environment: cotak-staging
-            account_scope: staging
-            aws_partition: aws
-          - name: WFTAK Staging
-            environment: wftak-staging
             account_scope: staging
             aws_partition: aws
     steps:
