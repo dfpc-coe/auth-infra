@@ -12,6 +12,10 @@
 
 ### Pending Release
 
+### v3.11.0 - 2026-10-20
+
+- :rocket: Significantly reduce LDAP Query overhead by switching to temporary in-house fork
+
 ### v3.10.1 - 2026-10-15
 
 - :bug: Switch to full ARN for Secrets
