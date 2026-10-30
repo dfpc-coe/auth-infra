@@ -12,6 +12,8 @@
 
 ### Pending Release
 
+- :tada: Add `blueprints/ldap.blueprint.yaml`, the LDAP bind flow, service account, provider, application and outpost record for a new deployment, and the README steps that apply it
+
 ### v3.11.0 - 2026-10-20
 
 - :rocket: Significantly reduce LDAP Query overhead by switching to temporary in-house fork

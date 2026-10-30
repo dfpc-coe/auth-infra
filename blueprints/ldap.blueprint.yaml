@@ -1,0 +1,213 @@
+# The LDAP directory for TAK: bind flow, service account, provider,
+# application and outpost record, for a new Authentik deployment of this
+# stack. Written for Authentik 2026.8 from the settings COTAK production
+# runs, with one deliberate difference noted at the provider.
+#
+# How to apply, and what to do by hand afterwards (the service account's
+# password, the outpost's token), is Step 2 of the README. In short:
+# admin UI, Customisation > Blueprints > Create, Internal tab, this file
+# as the content, and under Additional settings a Context of
+#
+#   {"authentik_host": "https://auth.<hosted-zone-name>"}
+#
+# which overrides the placeholder below. Everything here is matched on
+# name or slug, so re-applying updates the same objects in place.
+#
+# Stock objects this file expects BY NAME (present on a fresh install):
+#   flows default-password-change and default-invalidation-flow
+
+version: 1
+metadata:
+  name: tak-ldap
+  labels:
+    blueprints.goauthentik.io/description: LDAP directory for TAK (bind flow, service account, provider, application, outpost)
+
+context:
+  # Overridden per deployment through the blueprint instance's Context.
+  authentik_host: https://auth.example.com
+
+entries:
+
+  # --------------------------------------------------------- bind flow
+
+  # The password stage is attached to the identification stage rather
+  # than bound to the flow, so a bind is identification plus password in
+  # one step, then login.
+
+  - model: authentik_stages_password.passwordstage
+    id: stage-ldap-password
+    identifiers:
+      name: ldap-authentication-password
+    attrs:
+      backends:
+        - authentik.core.auth.InbuiltBackend
+        - authentik.core.auth.TokenBackend
+        - authentik.sources.ldap.auth.LDAPBackend
+        - authentik.sources.kerberos.auth.KerberosBackend
+      configure_flow: !Find [authentik_flows.flow, [slug, default-password-change]]
+      failed_attempts_before_cancel: 5
+      allow_show_password: false
+
+  - model: authentik_stages_identification.identificationstage
+    id: stage-ldap-identification
+    identifiers:
+      name: ldap-identification-stage
+    attrs:
+      user_fields:
+        - username
+        - email
+      password_stage: !KeyOf stage-ldap-password
+      case_insensitive_matching: true
+      pretend_user_exists: true
+      show_matched_user: true
+      show_source_labels: false
+      enable_remember_me: false
+
+  - model: authentik_stages_user_login.userloginstage
+    id: stage-ldap-login
+    identifiers:
+      name: ldap-authentication-login
+    attrs:
+      session_duration: seconds=0
+      remember_me_offset: seconds=0
+      remember_device: days=30
+      terminate_other_sessions: false
+      geoip_binding: bind_continent
+      network_binding: bind_asn
+
+  - model: authentik_flows.flow
+    id: flow-ldap-authentication
+    identifiers:
+      slug: ldap-authentication-flow
+    attrs:
+      name: ldap-authentication-flow
+      title: ldap-authentication-flow
+      designation: authentication
+      authentication: none
+      denied_action: message_continue
+      policy_engine_mode: any
+      layout: stacked
+      compatibility_mode: false
+
+  - model: authentik_flows.flowstagebinding
+    identifiers:
+      target: !KeyOf flow-ldap-authentication
+      stage: !KeyOf stage-ldap-identification
+      order: 10
+    attrs:
+      re_evaluate_policies: true
+      evaluate_on_plan: false
+      invalid_response_action: retry
+      policy_engine_mode: any
+
+  - model: authentik_flows.flowstagebinding
+    identifiers:
+      target: !KeyOf flow-ldap-authentication
+      stage: !KeyOf stage-ldap-login
+      order: 30
+    attrs:
+      re_evaluate_policies: true
+      evaluate_on_plan: false
+      invalid_response_action: retry
+      policy_engine_mode: any
+
+  # ------------------------------------------- search role and account
+
+  - model: authentik_rbac.role
+    id: role-ldap-search
+    identifiers:
+      name: ldap-search
+
+  # The account TAK binds as. Created with NO usable password on purpose:
+  # the password lives in the stack's `<stack>/svc` secret and is set by
+  # hand (README, Step 2), so it never rides in this file or in the
+  # blueprint instance Authentik stores. The account is in no groups; the
+  # `ldap-search` role here, with that role's permission on the provider
+  # below, is what lets it search the whole directory. A permission
+  # granted to the user directly is ignored by the outpost. `roles` is
+  # the full set on every apply, which is the intent: exactly one role.
+  - model: authentik_core.user
+    id: user-ldapsvcaccount
+    identifiers:
+      username: ldapsvcaccount
+    attrs:
+      name: LDAP service account (TAK binds as this)
+      type: service_account
+      path: users
+      is_active: true
+      roles:
+        - !KeyOf role-ldap-search
+
+  # ------------------------------------------------------------ provider
+
+  - model: authentik_providers_ldap.ldapprovider
+    id: provider-ldap
+    identifiers:
+      name: Provider for LDAP
+    attrs:
+      # THE BIND FLOW IS authorization_flow. The outpost is told its bind
+      # flow from the provider's authorization_flow, and the LDAP form's
+      # "Bind Flow" field writes that column; authentication_flow is not
+      # shown on the LDAP form and the outpost never reads it. With the
+      # two the other way round every bind comes back 49 (invalid
+      # credentials) and the outpost log says "Flow does not apply to
+      # current user", because the outpost is running a flow that needs
+      # an already-authenticated user. And a bind-flow change on a
+      # provider in CACHED bind mode does not reach a running outpost
+      # (2026.8.4): the refresh keeps the old bind handler and the cache
+      # of refused binds. Restart the outpost tasks after changing it.
+      authorization_flow: !KeyOf flow-ldap-authentication
+      authentication_flow: null
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-invalidation-flow]]
+      base_dn: DC=ldap,DC=goauthentik,DC=io
+      certificate: null
+      tls_server_name: ""
+      uid_start_number: 2000
+      gid_start_number: 4000
+      bind_mode: cached
+      search_mode: cached
+      # Code-based MFA is OFF: nothing binds here with a TOTP code
+      # appended to its password, and with it on a password containing
+      # a semicolon is split at the semicolon and refused. COTAK
+      # production has it on; that is the one difference from prod.
+      mfa_support: false
+    # "Search full LDAP directory" on this provider, for the role above.
+    # Fully qualified: the blueprint schema lists the bare codename, but
+    # 2026.8 refuses it ("first argument must be in format:
+    # 'app_label.codename'").
+    permissions:
+      - permission: authentik_providers_ldap.search_full_directory
+        role: !KeyOf role-ldap-search
+
+  - model: authentik_core.application
+    id: app-ldap
+    identifiers:
+      slug: ldap
+    attrs:
+      name: LDAP
+      provider: !KeyOf provider-ldap
+      open_in_new_tab: false
+      policy_engine_mode: any
+
+  # ------------------------------------------------------------- outpost
+
+  # Creating the record creates its service user and its API token; the
+  # token is read in the UI and stored in Secrets Manager (README, Step
+  # 2). No service connection: Authentik does not deploy this outpost,
+  # the LDAP CloudFormation stack does. The outpost reads its host from
+  # the task's AUTHENTIK_HOST; the one here is what the UI shows and what
+  # a refresh hands back, so it should be the same value.
+  - model: authentik_outposts.outpost
+    id: outpost-ldap
+    identifiers:
+      name: LDAP Outpost
+    attrs:
+      type: ldap
+      service_connection: null
+      providers:
+        - !KeyOf provider-ldap
+      config:
+        authentik_host: !Context authentik_host
+        authentik_host_insecure: false
+        log_level: info
+        refresh_interval: minutes=5

@@ -100,10 +100,43 @@ The Authentik server ECS service now always uses target-tracking autoscaling. CP
 
 Step 2: Configure the Authentik LDAP Provider
 
-Follow the instructions of the Authentik documentation to [create and LDAP provider](https://docs.goauthentik.io/docs/add-secure-apps/providers/ldap/generic_setup).
+The bind flow, service account, provider, application and outpost record are defined in
+[blueprints/ldap.blueprint.yaml](blueprints/ldap.blueprint.yaml), so a new deployment is configured by applying
+that file rather than by following the Authentik [LDAP provider guide](https://docs.goauthentik.io/docs/add-secure-apps/providers/ldap/generic_setup)
+by hand. In the admin UI at `https://auth.<hosted-zone-name>`:
 
-* **LDAP Service Account:** The username and password have been created by the above CloudFormation template as a Secrets Manager secret in `coe-auth-<stack>>/svc`.
-* **LDAP Outpost AUTHENTIK_TOKEN:** The Authentik server will create an AUTHENTIK_TOKEN for the LDAP Outpost, which needs to be saved in Secrets Manager as the secret for `coe-auth-<stack>>/authentik-ldap-token`
+1. **Apply the blueprint:** Customisation > Blueprints > Create. Name it `tak-ldap`, choose the Internal tab and paste
+   the file as the content, and under Additional settings set Context to
+
+   ```
+   {"authentik_host": "https://auth.<hosted-zone-name>"}
+   ```
+
+   Save, then Apply from the row's actions. A green status means every object landed; a red one carries the error.
+   Objects are matched on name or slug, so re-applying the file updates them in place.
+
+2. **LDAP Service Account:** the blueprint creates the `ldapsvcaccount` user with no password. Set it from
+   Directory > Users > ldapsvcaccount > Set password, using the `password` value of the `<stack>/svc` secret
+   that the above CloudFormation template generated (its `username` is `ldapsvcaccount`). TAK binds as
+   `cn=ldapsvcaccount,ou=users,dc=ldap,dc=goauthentik,dc=io` with that password.
+
+3. **LDAP Outpost AUTHENTIK_TOKEN:** the blueprint creates the `LDAP Outpost` record, and with it the outpost's
+   token. Read it from Applications > Outposts > LDAP Outpost > View deployment info, and save it as the whole
+   plain value of the `<stack>/authentik-ldap-token` secret (the outpost task reads the entire secret into
+   `AUTHENTIK_TOKEN`, not a JSON key).
+
+> [!WARNING]
+> The LDAP outpost's bind flow is the provider's **Authorization flow** (the "Bind Flow" field on the LDAP provider
+> form writes that column). A provider whose authorization flow needs an already-authenticated user refuses every
+> bind with code 49 and logs "Flow does not apply to current user" in the outpost's CloudWatch log group. And on a
+> provider in cached bind mode a bind-flow change does not reach a running outpost (Authentik 2026.8.4): the
+> outpost keeps the old flow, and its cache of refused binds, until its tasks are replaced. After changing the
+> bind flow, force a new deployment of the LDAP stack's `-LDAP-Outpost` ECS service.
+
+> [!NOTE]
+> The blueprint is written for a new deployment and has code-based MFA support off. COTAK production was
+> configured by hand before the file existed and has MFA support on; review the differences before applying the
+> file there.
 
 Step 3: Create the Authentik LDAP Outpost
 
