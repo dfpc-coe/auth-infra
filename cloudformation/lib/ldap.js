@@ -190,7 +190,8 @@ export default {
                         { Name: 'StackName',                    Value: cf.stackName },
                         { Name: 'AWS_DEFAULT_REGION',           Value: cf.region },
                         { Name: 'AUTHENTIK_HOST',               Value: cf.join(['https://auth.', cf.importValue(cf.join(['tak-vpc-', cf.ref('Environment'), '-hosted-zone-name']))]) },
-                        { Name: 'AUTHENTIK_INSECURE',           Value: 'false' }
+                        { Name: 'AUTHENTIK_INSECURE',           Value: 'false' },
+                        { Name: 'AUTHENTIK_LDAP__PAGE_SIZE',    Value: cf.ref('LdapPageSize') }
                     ],
                     Secrets: [
                         { Name: 'AUTHENTIK_TOKEN', ValueFrom: cf.join(['arn:', cf.partition, ':secretsmanager:', cf.region, ':', cf.accountId, ':secret:', AuthStackName, '/authentik-ldap-token']) }

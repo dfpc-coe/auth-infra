@@ -12,6 +12,8 @@
 
 ### Pending Release
 
+- :rocket: `LdapPageSize` parameter on the LDAP stack: users and groups per API page when the outpost rebuilds its snapshot (`AUTHENTIK_LDAP__PAGE_SIZE`, default 50). Raise the core's Maximum page size setting before going above 100.
+
 ### v3.11.0 - 2026-10-20
 
 - :rocket: Significantly reduce LDAP Query overhead by switching to temporary in-house fork
