@@ -12,7 +12,11 @@
 
 ### Pending Release
 
-### v3.13. - 2026-11-23
+### v3.13.1 - 2026-11-24
+
+- :arrow_up: Update all GH Action Dependencies to latest versions
+
+### v3.13.0 - 2026-11-23
 
 - :bug: LDAP outpost no longer caches refused binds: a failed TAK login can no longer stick after the password or account is fixed
 

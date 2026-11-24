@@ -32,16 +32,16 @@ jobs:
             account_scope: staging
             aws_partition: aws
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{github.event.pull_request.head.sha || github.sha}}
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: arn:${{ matrix.aws_partition }}:iam::${{ matrix.account_scope == 'prod' && secrets.AWS_ACCOUNT_ID || secrets.AWS_STAGING_ACCOUNT_ID }}:role/Github-ECR-Builder
           role-session-name: GithubECRBuilder
