@@ -1,20 +1,23 @@
 # syntax=docker/dockerfile:1
 
-# Interim image: authentik 2026.8.6 LDAP outpost with two fixes that no
+# Interim image: authentik 2026.8.6 LDAP outpost with three fixes that no
 # 2026.8.x release carries:
 #   - the memory-searcher DN index (upstream PR #27120, open; lab record in
 #     frontend-cotak docs/scratches/outpost-lab/dn-index-lab-2026-10-16.md)
 #   - the cached binder applying provider changes on refresh (upstream PR
 #     #27402, merged to main 2026-11-02, not backported to 2026.8)
-# The builder compiles the outpost binary from the release tag plus the two
+#   - the session binder caching successful binds only (the one-condition
+#     change from upstream PR #24582, open; a refused bind used to be cached
+#     until the outpost restarted)
+# The builder compiles the outpost binary from the release tag plus the three
 # patch commits, using the same toolchain image and flags as upstream's
 # lifecycle/container/ldap.Dockerfile at that tag; the runtime stage is the
 # unmodified official image with only /ldap replaced. Revert to a plain
-# FROM ghcr.io/goauthentik/ldap:<version> once a release carries both.
+# FROM ghcr.io/goauthentik/ldap:<version> once a release carries all three.
 
 # lab/2026.8.6-dn-index-session-binder = version/2026.8.6 + the DN-index
-# commit + the session-binder commit
-ARG AUTHENTIK_REF=897f51c607b69a51b4a0f22ac42f114f56f1b7f2
+# commit + the session-binder commit + the successful-binds-only commit
+ARG AUTHENTIK_REF=f3b97074b7ef9dafb620a128031ceba116ff9a13
 
 FROM docker.io/library/golang:1.27-trixie@sha256:1896654cfc5c2b5ad74c07f29cb36f5d2d1cbed42e3054070fbfe444e521e83c AS builder
 
