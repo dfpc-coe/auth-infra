@@ -12,6 +12,8 @@
 
 ### Pending Release
 
+### v3.13. - 2026-11-23
+
 - :bug: LDAP outpost no longer caches refused binds: a failed TAK login can no longer stick after the password or account is fixed
 
 ### v3.12.0 - 2026-11-16
